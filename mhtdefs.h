@@ -33,4 +33,27 @@ Return:
 */
 void deleteMHTNode(PMHTNode *node_ptr);
 
+/*
+Generating a hash by page number with SHA256 algorithm
+Parameter:
+	page_no [IN]: page number.
+	buf [OUT]: buffer holding output hash value.
+	buf_len [IN]: the maximal size of given buffer (buf), which must be larger than 32 bytes.
+Return:
+	NULL.
+*/
+void generateHashByPageNo_SHA256(uint32 page_no, char *buf, uint32 buf_len);
+
+/*
+Generating a hash by combining two given hashes with SHA256 algorithm
+Parameter:
+	str1 [IN]: the frist hash.
+	str2 [IN]: the second hash.
+	buf [OUT]: buffer holding output hash value.
+	buf_len [IN]: the maximal size of given buffer (buf), which must be larger than 32 bytes.
+Return:
+	NULL.
+*/
+void generateCombinedHash_SHA256(char *hash1, char *hash2, char *buf, uint32 buf_len);
+
 #endif

@@ -58,6 +58,16 @@ void test_queue() {
 
 int main(int argc, char const *argv[])
 {
+	char hash1[40] = {0};
+	char hash2[40] = {0};
+	char combinedHash[40] = {0};
+	char hash_string[65] = {0};
 	testMHTQueue();
+	generateHashByPageNo_SHA256(25, hash1, 40);
+	generateHashByPageNo_SHA256(26, hash2, 40);
+	generateCombinedHash_SHA256(hash1, hash2, combinedHash, 40);
+	print_hash_value(combinedHash);
+	convert_hash_to_string(combinedHash, hash_string, 65);
+	printf("%s\n", hash_string);
 	return 0;
 }

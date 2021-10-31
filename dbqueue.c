@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "mhtdefs.h"
+#include "sha256.h"
 #include "dbqueue.h"
 
 PQNode makeQHeader() {
@@ -48,8 +49,10 @@ PQNode makeCombinedQNode(PQNode node1_ptr, PQNode node2_ptr) {
 	}
 
 	tmp_level = node1_ptr->m_level + 1;
-	memcpy(tmp_buf, node1_ptr->m_MHTNode_ptr->m_hash, HASH_LEN);
-	tmp_buf[4] = 'A' + tmp_level;
+	generateCombinedHash_SHA256(node1_ptr->m_MHTNode_ptr->m_hash,
+		node2_ptr->m_MHTNode_ptr->m_hash,
+		tmp_buf, 
+		HASH_LEN);
 	new_mhtnode_ptr = makeMHTNode(-1, tmp_buf);
 	check_pointer(new_mhtnode_ptr, "new_mhtnode_ptr");
 	new_qnode_ptr = makeQNode(new_mhtnode_ptr, tmp_level);

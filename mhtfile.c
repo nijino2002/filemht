@@ -5,6 +5,7 @@ extern PQNode g_pQ;
 
 void testMHTQueue(){
 	const char str[32] = TEST_STR2;
+	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
 	int i = 0;
 	int diff = 0;
 	PQNode qnode_ptr = NULL;
@@ -33,9 +34,13 @@ void testMHTQueue(){
 	initQueue(&g_pQHeader, &g_pQ);
 	check_pointer((void*)g_pQHeader, "g_pQHeader");
 	check_pointer((void*)g_pQ, "g_pQ");
-	for(i = 0; i < 100; i++){
-		mhtnode_ptr = makeMHTNode(i+1, str); check_pointer((void*)mhtnode_ptr, "mhtnode_ptr");
-		qnode_ptr = makeQNode(mhtnode_ptr, 0); check_pointer((void*)qnode_ptr, "qnode_ptr");
+	for(i = 0; i < 100; i++){	// i refers to page number
+		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
+		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
+		check_pointer((void*)mhtnode_ptr, "mhtnode_ptr");
+		qnode_ptr = makeQNode(mhtnode_ptr, 0); 
+		check_pointer((void*)qnode_ptr, "qnode_ptr");
 		enqueue(&g_pQHeader, &g_pQ, qnode_ptr);
 
 		current_qnode_ptr = g_pQ;
@@ -87,7 +92,7 @@ void testMHTQueue(){
 	diff = tmp_node_ptr->m_level - g_pQ->m_level;
 	for (i = 0; i < diff; i++){
 		qnode_ptr = makeCombinedQNodeFromSingleNode(g_pQ);
-		printf("%d\n", qnode_ptr->m_level);
+		//printf("%d\n", qnode_ptr->m_level);
 		check_pointer(qnode_ptr, "qnode_ptr");
 		enqueue(&g_pQHeader, &g_pQ, qnode_ptr);
 	}
