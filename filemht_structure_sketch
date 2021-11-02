@@ -8,7 +8,7 @@ This is a description on the design of file-based MHT structure.
 | 64 bytes reserved).       |      64 bytes      |       64 bytes     |      |
 ----------------------------------------------------------------------------------------------
 
-2. File header structure (ROOT node) (Unit: byte):
+2. File header (FH) structure (ROOT node, 128 bytes in total) (Unit: byte):
 
 ----------------------------------------------------------------
 | PN | NL | HSH | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
@@ -26,4 +26,24 @@ This is a description on the design of file-based MHT structure.
 9) Parent Offset (POS): 4 bytes, the offset of the parent node in MHT file
 10) Reserved region (RSVD): 64 bytes.
 
-3: Child node block structure:
+3. Child node blockm (CNB) structure (68 bytes in total):
+
+----------------------------------------------------------------
+| PN | NL | HSH | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
+|  4 |  4 |  32 |   4  |   4  |   4  |   4  |  4  |  4  |   4  |
+----------------------------------------------------------------
+
+1) Page No. (PN): 4 bytes
+2) Node Level (NL): 4 bytes
+3) Hash (HSH): 32 bytes, SHA256 hash value
+4) Left Child Page No. (LCPN): 4 bytes
+5) Left Child Offset (LCOS): 4 bytes, the offset of the left child node in MHT file
+6) Right Child Page No. (RCPN): 4 bytes
+7) Right Child Offset (RCOS): 4 bytes, the offset of the right child node in MHT file
+8) Parent Page No. (PPN): 4 bytes
+9) Parent Offset (POS): 4 bytes, the offset of the parent node in MHT file
+10) Reserved region (RSVD): 4 bytes.
+
+4. Supplement of some sections of FH and CNB:
+1) NL is used to hold node level, which can be also used to determine node type. NL = 0 refers to leaf node, NL > 0 refers interior node, and root node has the maximal NL.
+2) PN not only holds page number but also is used as the value when locating leaf node by using binary search in file-based MHT.
