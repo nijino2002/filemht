@@ -16,3 +16,14 @@ void check_pointer(void* ptr, const char *ptr_name) {
 
 	return;
 }
+
+void debug_print(const char *from, const char *dbg_msg) {
+	if(!from || !dbg_msg) {
+		printf("DBGMSG ERROR: null message from a null source.\n");
+		return;
+	}
+
+	printf("DBGMSG: from %s; %s.\n", from, dbg_msg);
+
+	return;
+}

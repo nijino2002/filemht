@@ -9,6 +9,8 @@
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
 #define MHT_HEADER_LEN	128
 #define MHT_CNB_LEN		70
+#define UNASSIGNED_PAGENO	-1
+#define NODELEVEL_LEAF		0
 
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
@@ -32,5 +34,15 @@ Parameters:
 	ptr_name: pointer's name.
  */
 void check_pointer(void* ptr, const char *ptr_name);
+
+/*
+Printing a debug message.
+Parameters:
+	from: where this debug message comes from.
+	dbg_msg: the content of the debug message.
+Return:
+	NULL.
+*/
+void debug_print(const char *from, const char *dbg_msg);
 
 #endif

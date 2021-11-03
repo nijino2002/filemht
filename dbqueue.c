@@ -57,7 +57,7 @@ PQNode makeCombinedQNode(PQNode node1_ptr, PQNode node2_ptr) {
 		node2_ptr->m_MHTNode_ptr->m_hash,
 		tmp_buf, 
 		HASH_LEN);
-	new_mhtnode_ptr = makeMHTNode(-1, tmp_buf);
+	new_mhtnode_ptr = makeMHTNode(UNASSIGNED_PAGENO, tmp_buf);
 	check_pointer(new_mhtnode_ptr, "new_mhtnode_ptr");
 	new_qnode_ptr = makeQNode(new_mhtnode_ptr, tmp_level);
 	check_pointer(new_qnode_ptr, "new_qnode_ptr");

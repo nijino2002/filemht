@@ -17,6 +17,10 @@ PMHTNode makeMHTNode(uint32 pageno, const char d[]){
 	return node_ptr;
 }
 
+PMHTNode makeZeroMHTNode(uint32 pageno){
+	return makeMHTNode(pageno, g_zeroHash);
+}
+
 void deleteMHTNode(PMHTNode *node_ptr){
 	if(*node_ptr){
 		free(*node_ptr);

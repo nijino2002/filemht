@@ -25,6 +25,14 @@ Return: a pointer to an MHT node.
 PMHTNode makeMHTNode(uint32 pageno, const char d[]);
 
 /*
+Making a MHT node with hashed zero.
+Parameters: 
+	pageno: page number.
+Return: a pointer to an MHT node.
+ */
+PMHTNode makeZeroMHTNode(uint32 pageno);
+
+/*
 Freeing a given MHT node.
 Parameters:
 	node_ptr: a 2-d pointer to the given node.
