@@ -10,6 +10,8 @@ PQNode makeQHeader() {
 		return NULL;
 	node_ptr->m_length = 0;
 	node_ptr->m_MHTNode_ptr = NULL;
+	node_ptr->m_is_supplementary_node = (uchar) FALSE;
+	node_ptr->m_is_zero_node = (uchar) FALSE;
 	node_ptr->prev = NULL;
 	node_ptr->next = NULL;
 
@@ -25,6 +27,8 @@ PQNode makeQNode(PMHTNode pmhtnode, unit16 level){
 		return NULL;
 	node_ptr->m_level = level;
 	node_ptr->m_MHTNode_ptr = pmhtnode;
+	node_ptr->m_is_supplementary_node = (uchar) FALSE;
+	node_ptr->m_is_zero_node = (uchar) FALSE;
 	node_ptr->prev = NULL;
 	node_ptr->next = NULL;
 

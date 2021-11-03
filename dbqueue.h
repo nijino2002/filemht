@@ -9,6 +9,8 @@ typedef struct _QNode
 		uint32	m_level;
 		uint32	m_length;
 	};
+	uchar m_is_supplementary_node;
+	uchar m_is_zero_node;
 	PMHTNode m_MHTNode_ptr;
 	struct _QNode *prev;
 	struct _QNode *next;

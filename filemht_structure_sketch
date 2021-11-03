@@ -10,10 +10,10 @@ This is a description on the design of file-based MHT structure.
 
 2. File header (FH) structure (ROOT node, 128 bytes in total) (Unit: byte):
 
-----------------------------------------------------------------
-| PN | NL | HSH | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
-|  4 |  4 |  32 |   4  |   4  |   4  |   4  |  4  |  4  |  64  |
-----------------------------------------------------------------
+----------------------------------------------------------------------------
+| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
+|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |  62  |
+----------------------------------------------------------------------------
 
 1) Page No. (PN): 4 bytes
 2) Node Level (NL): 4 bytes
@@ -26,12 +26,12 @@ This is a description on the design of file-based MHT structure.
 9) Parent Offset (POS): 4 bytes, the offset of the parent node in MHT file
 10) Reserved region (RSVD): 64 bytes.
 
-3. Child node blockm (CNB) structure (68 bytes in total):
+3. Child node blockm (CNB) structure (70 bytes in total):
 
-----------------------------------------------------------------
-| PN | NL | HSH | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
-|  4 |  4 |  32 |   4  |   4  |   4  |   4  |  4  |  4  |   4  |
-----------------------------------------------------------------
+----------------------------------------------------------------------------
+| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
+|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |   4  |
+----------------------------------------------------------------------------
 
 1) Page No. (PN): 4 bytes
 2) Node Level (NL): 4 bytes
