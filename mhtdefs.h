@@ -7,12 +7,15 @@ typedef struct  _MHTNode
 {
 	uint32	m_pageNo;
 	char	m_hash[32];
-	uint32	m_lchildOffset;
-	uint32 	m_rchildOffset;
-	uint32	m_parentOffset;
-	uint32	m_lchildPageNo;
-	uint32	m_rchildPageNo;
-	uint32	m_parentPageNo;
+	/* a minus offset indicates the distance that the file pointer has to move back 
+	from current node to the member.
+	*/ 
+	int 	m_lchildOffset;
+	int  	m_rchildOffset;
+	int 	m_parentOffset;
+	int 	m_lchildPageNo;
+	int 	m_rchildPageNo;
+	int 	m_parentPageNo;
 } MHTNode, *PMHTNode;
 
 /*
@@ -22,7 +25,7 @@ Parameters:
 	d: data string.
 Return: a pointer to an MHT node.
  */
-PMHTNode makeMHTNode(uint32 pageno, const char d[]);
+PMHTNode makeMHTNode(int pageno, const char d[]);
 
 /*
 Making a MHT node with hashed zero.
@@ -30,7 +33,7 @@ Parameters:
 	pageno: page number.
 Return: a pointer to an MHT node.
  */
-PMHTNode makeZeroMHTNode(uint32 pageno);
+PMHTNode makeZeroMHTNode(int pageno);
 
 /*
 Freeing a given MHT node.
@@ -50,7 +53,7 @@ Parameter:
 Return:
 	NULL.
 */
-void generateHashByPageNo_SHA256(uint32 page_no, char *buf, uint32 buf_len);
+void generateHashByPageNo_SHA256(int page_no, char *buf, uint32 buf_len);
 
 /*
 Generating a hash by combining two given hashes with SHA256 algorithm

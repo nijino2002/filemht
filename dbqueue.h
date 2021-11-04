@@ -34,6 +34,16 @@ Return: a pointer to a new created queue node.
  */
 PQNode makeQNode(PMHTNode pmhtnode, uint16 level);
 
+/*
+Making a queue node from an MHT node with more parameters.
+Parameters: 
+	pmhtnode: a pointer to an MHT node.
+	level: the level of the MHT node.
+	ISN: whether the node is a supplementary node.
+	IZN: whether the node contains a hashed zero.
+	RMSTLPN: page no. of the leaf node of the right-most subtree.
+Return: a pointer to a new created queue node.
+ */
 PQNode makeQNode2(PMHTNode pmhtnode, 
 				  uint16 level,
 				  uchar ISN,

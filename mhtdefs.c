@@ -1,23 +1,23 @@
 #include "sha256.h"
 #include "mhtdefs.h"
 
-PMHTNode makeMHTNode(uint32 pageno, const char d[]){
+PMHTNode makeMHTNode(int pageno, const char d[]){
 	PMHTNode node_ptr = NULL;
-	if(pageno <= 0 || d == NULL)
+	if(d == NULL)
 		return NULL;
 	node_ptr = (PMHTNode) malloc(sizeof(MHTNode));
 	if(node_ptr == NULL)
 		return NULL;
 	node_ptr->m_pageNo = pageno;
 	memcpy(node_ptr->m_hash, d, HASH_LEN);	// HASH_LEN == SHA256_BLOCK_SIZE == 32
-	node_ptr->m_lchildOffset = node_ptr->m_lchildPageNo = 0;
-	node_ptr->m_rchildOffset = node_ptr->m_rchildPageNo = 0;
-	node_ptr->m_parentOffset = node_ptr->m_parentPageNo = 0;
+	node_ptr->m_lchildOffset = node_ptr->m_lchildPageNo = UNASSIGNED_PAGENO;
+	node_ptr->m_rchildOffset = node_ptr->m_rchildPageNo = UNASSIGNED_PAGENO;
+	node_ptr->m_parentOffset = node_ptr->m_parentPageNo = UNASSIGNED_PAGENO;
 
 	return node_ptr;
 }
 
-PMHTNode makeZeroMHTNode(uint32 pageno){
+PMHTNode makeZeroMHTNode(int pageno){
 	return makeMHTNode(pageno, g_zeroHash);
 }
 
@@ -30,7 +30,7 @@ void deleteMHTNode(PMHTNode *node_ptr){
 	return;
 }
 
-void generateHashByPageNo_SHA256(uint32 page_no, char *buf, uint32 buf_len){
+void generateHashByPageNo_SHA256(int page_no, char *buf, uint32 buf_len){
 	char tmp_buf[32]={0};
 
 	if(page_no < 0){
