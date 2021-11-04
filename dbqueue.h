@@ -9,8 +9,9 @@ typedef struct _QNode
 		uint32	m_level;
 		uint32	m_length;
 	};
-	uchar m_is_supplementary_node;
-	uchar m_is_zero_node;
+	uchar m_is_supplementary_node;	/* temporarily marking whether the node is a supplementary node to build a complete MHT */
+	uchar m_is_zero_node;	/* temporarily marking whether node's hash is hashed zero */
+	uint32 m_RMSTL_page_no;	/* temporarily storing the page number of the right-most sub-tree leaf, used to craete binary search structure */
 	PMHTNode m_MHTNode_ptr;
 	struct _QNode *prev;
 	struct _QNode *next;
@@ -31,7 +32,13 @@ Parameters:
 	level: the level of the MHT node.
 Return: a pointer to a new created queue node.
  */
-PQNode makeQNode(PMHTNode pmhtnode, unit16 level);
+PQNode makeQNode(PMHTNode pmhtnode, uint16 level);
+
+PQNode makeQNode2(PMHTNode pmhtnode, 
+				  uint16 level,
+				  uchar ISN,
+				  uchar IZN,
+				  uint32 RMSTLPN);
 
 /*
 Making a combined queue node from a given node.

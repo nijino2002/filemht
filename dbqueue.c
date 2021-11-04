@@ -12,13 +12,14 @@ PQNode makeQHeader() {
 	node_ptr->m_MHTNode_ptr = NULL;
 	node_ptr->m_is_supplementary_node = (uchar) FALSE;
 	node_ptr->m_is_zero_node = (uchar) FALSE;
+	node_ptr->m_RMSTL_page_no = UNASSIGNED_PAGENO;
 	node_ptr->prev = NULL;
 	node_ptr->next = NULL;
 
 	return node_ptr;
 }
 
-PQNode makeQNode(PMHTNode pmhtnode, unit16 level){
+PQNode makeQNode(PMHTNode pmhtnode, uint16 level){
 	PQNode node_ptr = NULL;
 	if(pmhtnode == NULL || level < 0)
 		return NULL;
@@ -29,6 +30,29 @@ PQNode makeQNode(PMHTNode pmhtnode, unit16 level){
 	node_ptr->m_MHTNode_ptr = pmhtnode;
 	node_ptr->m_is_supplementary_node = (uchar) FALSE;
 	node_ptr->m_is_zero_node = (uchar) FALSE;
+	node_ptr->m_RMSTL_page_no = UNASSIGNED_PAGENO;
+	node_ptr->prev = NULL;
+	node_ptr->next = NULL;
+
+	return node_ptr;
+}
+
+PQNode makeQNode2(PMHTNode pmhtnode, 
+				  uint16 level,
+				  uchar ISN,
+				  uchar IZN,
+				  uint32 RMSTLPN) {
+	PQNode node_ptr = NULL;
+	if(pmhtnode == NULL || level < 0)
+		return NULL;
+	node_ptr = (PQNode) malloc(sizeof(QNode));
+	if(node_ptr == NULL)
+		return NULL;
+	node_ptr->m_level = level;
+	node_ptr->m_MHTNode_ptr = pmhtnode;
+	node_ptr->m_is_supplementary_node = (uchar) ISN;
+	node_ptr->m_is_zero_node = (uchar) IZN;
+	node_ptr->m_RMSTL_page_no = RMSTLPN;
 	node_ptr->prev = NULL;
 	node_ptr->next = NULL;
 
@@ -37,7 +61,7 @@ PQNode makeQNode(PMHTNode pmhtnode, unit16 level){
 
 PQNode makeCombinedQNodeFromSingleNode(PQNode node_ptr) {
 	return makeCombinedQNode(node_ptr, 
-		makeQNode(makeMHTNode(-2, ZERO_STR), node_ptr->m_level + 1));
+		makeQNode(makeMHTNode(SINGLENODECMB_PAGENO, ZERO_STR), node_ptr->m_level + 1));
 }
 
 PQNode makeCombinedQNode(PQNode node1_ptr, PQNode node2_ptr) {

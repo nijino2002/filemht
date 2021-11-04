@@ -62,7 +62,11 @@ int main(int argc, char const *argv[])
 	char hash2[40] = {0};
 	char combinedHash[40] = {0};
 	char hash_string[65] = {0};
-	testMHTQueue();
+
+	// testMHTQueue();
+	buildMHTFile();
+
+	/*
 	generateHashByPageNo_SHA256(0, hash1, 40);
 	generateHashByPageNo_SHA256(26, hash2, 40);
 	print_hash_value(hash1);
@@ -71,5 +75,6 @@ int main(int argc, char const *argv[])
 	print_hash_value(combinedHash);
 	convert_hash_to_string(combinedHash, hash_string, 65);
 	printf("%s\n", hash_string);
+	*/
 	return 0;
 }

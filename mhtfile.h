@@ -20,6 +20,8 @@ void buildMHTFile();
 
 /*----------  Helper Functions  ---------------*/
 
+void process_all_pages(PQNode *pQHeader, PQNode *pQ);
+
 /*
 This function only deals with the remaining nodes in the queue, which will 
 finish building a complte MHT by using "zero node" (node with hash of 0).

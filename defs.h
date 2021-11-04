@@ -10,13 +10,14 @@
 #define MHT_HEADER_LEN	128
 #define MHT_CNB_LEN		70
 #define UNASSIGNED_PAGENO	-1
+#define SINGLENODECMB_PAGENO	-2
 #define NODELEVEL_LEAF		0
 
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
 
 typedef unsigned int uint32;
-typedef unsigned short int unit16;
+typedef unsigned short int uint16;
 typedef unsigned char uchar;
 typedef enum {FALSE, TRUE} bool;
 
