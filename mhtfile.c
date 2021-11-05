@@ -337,6 +337,7 @@ uint32 compute_relative_distance_between_2_nodes(PQNode qnode1_ptr,
 	return ret_val;
 }
 
+
 void deal_with_nodes_offset(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_ptr){
 	int d1 = -1, d2 = -1;
 
@@ -357,4 +358,8 @@ void deal_with_nodes_offset(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_
 	rchild_ptr->m_MHTNode_ptr->m_parentOffset = -d2;
 
 	return;
+}
+
+void deal_with_interior_nodes_pageno(PQNode parent_ptr) {
+	;
 }

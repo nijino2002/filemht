@@ -54,7 +54,25 @@ uint32 compute_relative_distance_between_2_nodes(PQNode qnode1_ptr,
 												 PQNode qnode2_ptr,
 												 uchar pov);
 
+/**
+ * [deal_with_nodes_offset description]
+ * Dealing with nodes offset (relative distance), which will be used in creating MHT file.
+ * @Author   DiLu
+ * @DateTime 2021-11-05T16:44:14+0800
+ * @param    parent_ptr               [Parent node pointer, which usually refers to the node having been combined by two children]
+ * @param    lchild_ptr               [Left child node pointer]
+ * @param    rchild_ptr               [Right child node pointer]
+ */
 void deal_with_nodes_offset(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_ptr);
+
+/**
+ * [deal_with_interior_nodes_pageno description]
+ * This function deals with the page numbers of the interior nodes, which can implement binary search for the MHT.
+ * @Author   DiLu
+ * @DateTime 2021-11-05T17:21:15+0800
+ * @param    parent_ptr               [The parent node pointer when two-node combination finishes]
+ */
+void deal_with_interior_nodes_pageno(PQNode parent_ptr);
 
 /*----------  File Operation Functions  ------------*/
 
