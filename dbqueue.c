@@ -41,7 +41,7 @@ PQNode makeQNode2(PMHTNode pmhtnode,
 				  uint16 level,
 				  uchar ISN,
 				  uchar IZN,
-				  uint32 RMSTLPN) {
+				  int RMSTLPN) {
 	PQNode node_ptr = NULL;
 	if(pmhtnode == NULL || level < 0)
 		return NULL;

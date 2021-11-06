@@ -48,7 +48,7 @@ PQNode makeQNode2(PMHTNode pmhtnode,
 				  uint16 level,
 				  uchar ISN,
 				  uchar IZN,
-				  uint32 RMSTLPN);
+				  int RMSTLPN);
 
 /*
 Making a combined queue node from a given node.

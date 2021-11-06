@@ -203,6 +203,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 				check_pointer(cbd_qnode_ptr, "cbd_qnode_ptr");
 				enqueue(pQHeader, pQ, cbd_qnode_ptr);
 				deal_with_nodes_offset(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
+				deal_with_interior_nodes_pageno(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
 			}
 			current_qnode_ptr = current_qnode_ptr->prev;
 			check_pointer(current_qnode_ptr, "current_qnode_ptr");
@@ -287,6 +288,7 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				check_pointer(cbd_qnode_ptr, "cbd_qnode_ptr");
 				enqueue(pQHeader, pQ, cbd_qnode_ptr);
 				deal_with_nodes_offset(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
+				deal_with_interior_nodes_pageno(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
 			} //if
 			current_qnode_ptr = current_qnode_ptr->prev;
 			check_pointer(current_qnode_ptr, "current_qnode_ptr");
@@ -360,6 +362,23 @@ void deal_with_nodes_offset(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_
 	return;
 }
 
-void deal_with_interior_nodes_pageno(PQNode parent_ptr) {
-	;
+void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_ptr) {
+	if(!parent_ptr || !lchild_ptr || !rchild_ptr){
+		check_pointer(parent_ptr, "parent_ptr");
+		check_pointer(lchild_ptr, "lchild_ptr");
+		check_pointer(rchild_ptr, "rchild_ptr");
+		return;
+	}
+
+	/* lchild_ptr and rchild_ptr are leaf nodes. */
+	if(lchild_ptr->m_level <= 0 || rchild_ptr->m_level <= 0){
+		parent_ptr->m_MHTNode_ptr->m_pageNo = lchild_ptr->m_MHTNode_ptr->m_pageNo;
+		parent_ptr->m_RMSTL_page_no = rchild_ptr->m_MHTNode_ptr->m_pageNo;
+	}
+	else{	/* lchild_ptr and rchild_ptr are interior nodes. */
+		parent_ptr->m_MHTNode_ptr->m_pageNo = lchild_ptr->m_RMSTL_page_no;
+		parent_ptr->m_RMSTL_page_no = rchild_ptr->m_RMSTL_page_no;
+	}
+
+	return;
 }
