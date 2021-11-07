@@ -3,6 +3,87 @@
 extern PQNode g_pQHeader;
 extern PQNode g_pQ;
 
+void initMHTBlock(PMHT_BLOCK *pmht_block){
+	if(!*pmht_block){
+		check_pointer(*pmht_block, "*pmht_block");
+		debug_print("initMHTBlock", "*pmht_block cannot be NULL");
+		return;
+	}
+
+	(*pmht_block)->m_pageNo = UNASSIGNED_PAGENO;
+	(*pmht_block)->m_nodeLevel = 0;
+	memset((*pmht_block)->m_hash, 0, HASH_LEN);
+	(*pmht_block)->m_isSupplementaryNode = (uchar)FALSE;
+	(*pmht_block)->m_isZeroNode = (uchar)FALSE;
+	(*pmht_block)->m_lChildPageNo = UNASSIGNED_PAGENO;
+	(*pmht_block)->m_lChildOffset = 0;
+	(*pmht_block)->m_rChildPageNo = UNASSIGNED_PAGENO;
+	(*pmht_block)->m_rChildOffset = 0;
+	(*pmht_block)->m_parentPageNo = UNASSIGNED_PAGENO;
+	(*pmht_block)->m_parentOffset = 0;
+
+	return;
+}
+
+PMHT_BLOCK makeMHTBlock(){
+	PMHT_BLOCK pmht_block = NULL;
+
+	pmht_block = (PMHT_BLOCK) malloc(sizeof(MHT_BLOCK));
+	if(!pmht_block)	// Failed to allocate memory
+		return NULL;
+	initMHTBlock(&pmht_block);
+
+	return pmht_block;
+}
+
+PMHT_HEADER_BLOCK makeMHTHeaderBlock(){
+	PMHT_HEADER_BLOCK pmht_header_block = NULL;
+	PMHT_BLOCK pmht_block = NULL;
+
+	pmht_header_block = (PMHT_HEADER_BLOCK) malloc(sizeof(MHT_HEADER_BLOCK));
+	if(!pmht_header_block)
+		return NULL;
+
+	pmht_block = &(pmht_header_block->m_nodeBlock);
+	initMHTBlock(&pmht_block);
+	memset(pmht_header_block->m_Reserved, 0, MHT_HEADER_RSVD_SIZE);
+
+	return pmht_header_block;
+}
+
+PMHT_CHILD_NODE_BLOCK makeMHTChildNodeBlock(){
+	PMHT_CHILD_NODE_BLOCK pmht_cnblk = NULL;
+	PMHT_BLOCK pmht_block = NULL;
+
+	pmht_cnblk = (PMHT_CHILD_NODE_BLOCK) malloc(sizeof(MHT_CHILD_NODE_BLOCK));
+	if(!pmht_cnblk)
+		return NULL;
+
+	pmht_block = &(pmht_cnblk->m_nodeBlock);
+	initMHTBlock(&pmht_block);
+	memset(pmht_cnblk->m_Reserved, 0, MHT_CNB_RSVD_SIZE);
+
+	return pmht_cnblk;
+}
+
+void freeMHTBlock(PMHT_BLOCK *pmht_block){
+	(*pmht_block) != NULL ? free(*pmht_block) : nop();
+	*pmht_block = NULL;
+	return;
+}
+
+void freeMHTHeaderBlock(PMHT_HEADER_BLOCK *pmht_header_block){
+	(*pmht_header_block) != NULL ? free(*pmht_header_block) : nop();
+	*pmht_header_block = NULL;
+	return;
+}
+
+void freeMHTChildNodeBlock(PMHT_CHILD_NODE_BLOCK *pmht_child_node_block){
+	(*pmht_child_node_block) != NULL ? free(*pmht_child_node_block) : nop();
+	*pmht_child_node_block = NULL;
+	return;
+}
+
 void testMHTQueue(){
 	const char str[32] = TEST_STR2;
 	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
@@ -381,4 +462,96 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
 	}
 
 	return;
+}
+
+int serialize_mht_block(PMHT_BLOCK pmht_block, 
+						char **block_buf, 
+						uint32 block_buf_len) {
+	int ret = 0;	// 0 refers to none data has been processed.
+	char *p_buf = NULL;
+
+	if(!pmht_block || !*block_buf || !block_buf || block_buf_len != MHT_BLOCK_SIZE) {
+		check_pointer(pmht_block, "pmht_block");
+		check_pointer(*block_buf, "*block_buf");
+		check_pointer(block_buf, "block_buf");
+		debug_print("serialize_mht_block", "error parameters");
+		return ret;
+	}
+
+
+	p_buf = *block_buf;
+	memcpy(p_buf, &(pmht_block->m_pageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_nodeLevel), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, pmht_block->m_hash, HASH_LEN);
+	p_buf += HASH_LEN;
+	ret += HASH_LEN;
+	*p_buf = pmht_block->m_isSupplementaryNode;
+	p_buf += sizeof(char);
+	ret += sizeof(char);
+	*p_buf = pmht_block->m_isZeroNode;
+	p_buf += sizeof(char);
+	ret += sizeof(char);
+	memcpy(p_buf, &(pmht_block->m_lChildPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_lChildOffset), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_rChildPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_rChildOffset), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_parentPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(pmht_block->m_parentOffset), sizeof(int));
+	ret += sizeof(int);
+	/*
+	pmht_block->m_pageNo = *((int*)p_buf);
+	p_buf += sizeof(int);
+	pmht_block->m_nodeLevel = *((int*)p_buf);
+	p_buf += sizeof(int);
+	memcpy(pmht_block->m_hash, p_buf, HASH_LEN);
+	p_buf += HASH_LEN;
+	*/
+	return ret;
+}
+
+int unserialize_mht_block(char *block_buf, 
+						  uint32 block_buf_len, 
+						  PMHT_BLOCK *pmht_block) {
+	;
+}
+
+int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr) {
+	if(!qnode_ptr || !(*mhtblk_ptr)){
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(*mhtblk_ptr, "*mhtblk_ptr");
+		debug_print("convert_qnode_to_mht_block", "Null parameters");
+		return -1;
+	}
+
+	(*mhtblk_ptr)->m_pageNo = qnode_ptr->m_MHTNode_ptr->m_pageNo;
+	(*mhtblk_ptr)->m_nodeLevel = qnode_ptr->m_level;
+	memcpy((*mhtblk_ptr)->m_hash, qnode_ptr->m_MHTNode_ptr->m_hash, HASH_LEN);
+	(*mhtblk_ptr)->m_isSupplementaryNode = qnode_ptr->m_is_supplementary_node;
+	(*mhtblk_ptr)->m_isZeroNode = qnode_ptr->m_is_zero_node;
+	(*mhtblk_ptr)->m_lChildPageNo = qnode_ptr->m_MHTNode_ptr->m_lchildPageNo;
+	(*mhtblk_ptr)->m_lChildOffset = qnode_ptr->m_MHTNode_ptr->m_lchildOffset;
+	(*mhtblk_ptr)->m_rChildPageNo = qnode_ptr->m_MHTNode_ptr->m_rchildPageNo;
+	(*mhtblk_ptr)->m_rChildOffset = qnode_ptr->m_MHTNode_ptr->m_rchildOffset;
+	(*mhtblk_ptr)->m_parentPageNo = qnode_ptr->m_MHTNode_ptr->m_parentPageNo;
+	(*mhtblk_ptr)->m_parentOffset = qnode_ptr->m_MHTNode_ptr->m_parentOffset;
+
+	return 0;
+}
+
+int convert_qnode_to_mht_hdr_block(PQNode qnode_ptr, PMHT_HEADER_BLOCK *mht_hdrblk_ptr){
+	;
 }

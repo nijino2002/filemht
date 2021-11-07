@@ -1,12 +1,74 @@
 #ifndef _MHTFILE
 #define _MHTFILE
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "defs.h"
 #include "mhtdefs.h"
 #include "dbqueue.h"
 #include "sha256.h"
 
+/*
+66 bytes.
+---------------------------------------------------------------------
+| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS |
+|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |
+---------------------------------------------------------------------
+*/
+typedef struct _MHT_BLOCK {
+	int		m_pageNo;
+	int 	m_nodeLevel;
+	char	m_hash[HASH_LEN];
+	uchar 	m_isSupplementaryNode;
+	uchar	m_isZeroNode;
+	int 	m_lChildPageNo;
+	int 	m_lChildOffset;
+	int 	m_rChildPageNo;
+	int 	m_rChildOffset;
+	int 	m_parentPageNo;
+	int 	m_parentOffset;
+} MHT_BLOCK, *PMHT_BLOCK;
 
+/*
+--------------------
+| MHT BLOCK | RSVD |
+|     66    |  62  |
+--------------------
+*/
+typedef struct _MHT_HEADER_BLOCK {
+	MHT_BLOCK m_nodeBlock;
+	char 	m_Reserved[62];
+} MHT_HEADER_BLOCK, *PMHT_HEADER_BLOCK;
+
+/*
+--------------------
+| MHT BLOCK | RSVD |
+|     66    |   4  |
+--------------------
+*/
+typedef struct _MHT_CHILD_NODE_BLOCK{
+	MHT_BLOCK m_nodeBlock;
+	char 	m_Reserved[4];
+} MHT_CHILD_NODE_BLOCK, *PMHT_CHILD_NODE_BLOCK;
+
+/*-------------  MHT block processing functions  --------------*/
+void initMHTBlock(PMHT_BLOCK *pmht_block);
+
+PMHT_BLOCK makeMHTBlock();
+
+PMHT_HEADER_BLOCK makeMHTHeaderBlock();
+
+PMHT_CHILD_NODE_BLOCK makeMHTChildNodeBlock();
+
+void freeMHTBlock(PMHT_BLOCK *pmht_block);
+
+void freeMHTHeaderBlock(PMHT_HEADER_BLOCK *pmht_header_block);
+
+void freeMHTChildNodeBlock(PMHT_CHILD_NODE_BLOCK *pmht_child_node_block);
+
+/*----------  MHT file functions  ---------------*/
 void testMHTQueue();
 
 /*
@@ -75,6 +137,55 @@ void deal_with_nodes_offset(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_
  */
 void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_ptr);
 
+/**
+ * @brief      { Serializing a MHT block into a memory buffer. }
+ *
+ * @param[in]  pmht_block     The MHT block
+ * @param[out] block_buf      The block buffer
+ * @param[in]  block_buf_len  The block buffer length
+ *
+ * @return     { description_of_the_return_value }
+ */
+int serialize_mht_block(PMHT_BLOCK pmht_block, char **block_buf, uint32 block_buf_len);
+
+/**
+ * @brief      { Building an MHT Block structure from a given memory buffer. }
+ *
+ * @param[in]       block_buf      The block buffer
+ * @param[in]       block_buf_len  The block buffer length
+ * @param[out]      pmht_block     The MHT block
+ *
+ * @return     { description_of_the_return_value }
+ */
+int unserialize_mht_block(char *block_buf, uint32 block_buf_len, PMHT_BLOCK *pmht_block);
+
+int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
+
+int convert_qnode_to_mht_hdr_block(PQNode qnode_ptr, PMHT_HEADER_BLOCK *mht_hdrblk_ptr);
+
+int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *mht_hdrblk_ptr);
+
+int convert_mht_block_to_qnode(PMHT_BLOCK mhtblk_ptr, PQNode *qnode_ptr);
+
+int convert_mht_cldnode_block_to_qnode(PMHT_CHILD_NODE_BLOCK mht_hdrblk_ptr, PQNode *qnode_ptr);
+
+int convert_mht_hdr_block_to_qnode(PMHT_HEADER_BLOCK mht_hdrblk_ptr, PQNode *qnode_ptr);
+
 /*----------  File Operation Functions  ------------*/
+int fo_create_mhtfile(const char pathname);
+
+int fo_open_mhtfile(const char pathname);
+
+ssize_t fo_read_mht_header_block();
+
+ssize_t fo_update_mht_header_block();
+
+ssize_t fo_read_mht_child_node_block();
+
+ssize_t fo_update_mht_child_node_block();
+
+off_t fo_locate_mht_pos();
+
+int fo_close_mhtfile();
 
 #endif
