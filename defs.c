@@ -42,3 +42,16 @@ void debug_print(const char *from, const char *dbg_msg) {
 
 	return;
 }
+
+void print_buffer_in_byte_hex( uchar *buf, uint32 buf_len){
+	int i = 0;
+
+	if(!buf || buf_len <= 0){
+		printf("Parameter \"buf\" cannot be NULL, or buf_len cannot be equal to/less than 0.\n");
+		return;
+	}
+	for(i = 0; i < buf_len; i++) {
+		printf("%#04x  ", buf[i]);
+	}
+	printf("\n");
+}

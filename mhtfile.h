@@ -39,7 +39,7 @@ typedef struct _MHT_BLOCK {
 */
 typedef struct _MHT_HEADER_BLOCK {
 	MHT_BLOCK m_nodeBlock;
-	char 	m_Reserved[62];
+	char 	m_Reserved[MHT_HEADER_RSVD_SIZE];
 } MHT_HEADER_BLOCK, *PMHT_HEADER_BLOCK;
 
 /*
@@ -50,7 +50,7 @@ typedef struct _MHT_HEADER_BLOCK {
 */
 typedef struct _MHT_CHILD_NODE_BLOCK{
 	MHT_BLOCK m_nodeBlock;
-	char 	m_Reserved[4];
+	char 	m_Reserved[MHT_CNB_RSVD_SIZE];
 } MHT_CHILD_NODE_BLOCK, *PMHT_CHILD_NODE_BLOCK;
 
 /*-------------  MHT block processing functions  --------------*/
@@ -146,7 +146,11 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
  *
  * @return     { description_of_the_return_value }
  */
-int serialize_mht_block(PMHT_BLOCK pmht_block, char **block_buf, uint32 block_buf_len);
+int serialize_mht_block(PMHT_BLOCK pmht_block, uchar **block_buf, uint32 block_buf_len);
+
+int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, char **block_buf, uint32 block_buf_len);
+
+int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, char **block_buf, uint32 block_buf_len);
 
 /**
  * @brief      { Building an MHT Block structure from a given memory buffer. }

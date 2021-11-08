@@ -63,4 +63,6 @@ Return:
 */
 void debug_print(const char *from, const char *dbg_msg);
 
+void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
+
 #endif

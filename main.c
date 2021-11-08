@@ -76,5 +76,6 @@ int main(int argc, char const *argv[])
 	convert_hash_to_string(combinedHash, hash_string, 65);
 	printf("%s\n", hash_string);
 	*/
+	
 	return 0;
 }
