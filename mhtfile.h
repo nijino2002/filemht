@@ -175,6 +175,8 @@ int convert_mht_cldnode_block_to_qnode(PMHT_CHILD_NODE_BLOCK mht_hdrblk_ptr, PQN
 
 int convert_mht_hdr_block_to_qnode(PMHT_HEADER_BLOCK mht_hdrblk_ptr, PQNode *qnode_ptr);
 
+void print_qnode_info(PQNode qnode_ptr);
+
 /*----------  File Operation Functions  ------------*/
 int fo_create_mhtfile(const char pathname);
 

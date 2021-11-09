@@ -213,11 +213,24 @@ void buildMHTFile(){
 	deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
 
 	//dequeue remaining nodes (actuall, only root node remains)
+	/******* VARIABLES USED IN TEST ************/
+	PMHT_HEADER_BLOCK mht_hdrblk_ptr = NULL;
+	uchar *mhthdrblk_buffer = NULL;
+	/*******************************************/
 	while(popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ)){
 		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
-		printf("PageNo-Level: %d-%d\t", 
-			popped_qnode_ptr->m_MHTNode_ptr->m_pageNo, 
-			popped_qnode_ptr->m_level);
+
+		/***************** CODE FOR TEST *****************/
+		mhthdrblk_buffer = (char*)malloc(sizeof(char) * MHT_HEADER_LEN);
+		mht_hdrblk_ptr = makeMHTHeaderBlock();
+		convert_qnode_to_mht_hdr_block(popped_qnode_ptr, &mht_hdrblk_ptr);
+		serialize_mhthdr_block(mht_hdrblk_ptr, &mhthdrblk_buffer, MHT_HEADER_LEN);
+		print_buffer_in_byte_hex(mhthdrblk_buffer, MHT_HEADER_LEN);
+		freeMHTHeaderBlock(&mht_hdrblk_ptr);
+		free(mhthdrblk_buffer);
+		/************************************************/
+
+		print_qnode_info(popped_qnode_ptr);
 		// free node
 		deleteQNode(&popped_qnode_ptr);
 	} //while
@@ -253,6 +266,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	PMHT_CHILD_NODE_BLOCK mht_cldblk_ptr = NULL;
 	uchar *mhtblock_buffer = NULL;
 	uchar *mhtcldblk_buffer = NULL;
+	uchar *mhthdrblk_buffer = NULL;
 	/*******************************************/
 
 	if(*pQHeader != NULL && *pQ != NULL)
@@ -324,12 +338,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 				}
 				/************************************************/
 
-				printf("PageNo|Level|LCOS|RCOS|POS: %d|%d|%d|%d|%d\t", 
-					popped_qnode_ptr->m_MHTNode_ptr->m_pageNo, 
-					popped_qnode_ptr->m_level,
-					popped_qnode_ptr->m_MHTNode_ptr->m_lchildOffset,
-					popped_qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
-					popped_qnode_ptr->m_MHTNode_ptr->m_parentOffset);
+				print_qnode_info(popped_qnode_ptr);
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;
 			}
@@ -409,12 +418,7 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				   peeked_qnode_ptr->m_level < cbd_qnode_ptr->m_level) {
 				popped_qnode_ptr = dequeue(pQHeader, pQ);
 				check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
-				printf("PageNo|Level|LCOS|RCOS|POS: %d|%d|%d|%d|%d\t", 
-					popped_qnode_ptr->m_MHTNode_ptr->m_pageNo, 
-					popped_qnode_ptr->m_level,
-					popped_qnode_ptr->m_MHTNode_ptr->m_lchildOffset,
-					popped_qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
-					popped_qnode_ptr->m_MHTNode_ptr->m_parentOffset);
+				print_qnode_info(popped_qnode_ptr);
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;
 			} // while
@@ -489,6 +493,10 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
 		parent_ptr->m_MHTNode_ptr->m_pageNo = lchild_ptr->m_RMSTL_page_no;
 		parent_ptr->m_RMSTL_page_no = rchild_ptr->m_RMSTL_page_no;
 	}
+	parent_ptr->m_MHTNode_ptr->m_lchildPageNo = lchild_ptr->m_MHTNode_ptr->m_pageNo;
+	parent_ptr->m_MHTNode_ptr->m_rchildPageNo = rchild_ptr->m_MHTNode_ptr->m_pageNo;
+	lchild_ptr->m_MHTNode_ptr->m_parentPageNo = parent_ptr->m_MHTNode_ptr->m_pageNo;
+	rchild_ptr->m_MHTNode_ptr->m_parentPageNo = parent_ptr->m_MHTNode_ptr->m_pageNo;
 
 	return;
 }
@@ -658,4 +666,22 @@ int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *
 	memset((*mht_cldblk_ptr)->m_Reserved, 'R', MHT_CNB_RSVD_SIZE);
 	
 	return 0;
+}
+
+void print_qnode_info(PQNode qnode_ptr){
+	if(!qnode_ptr){
+		check_pointer(qnode_ptr, "qnode_ptr");
+		debug_print("print_qnode_info", "Null parameters");
+		return;
+	}
+
+	printf("PageNo|Level|LCPN|LCOS|RCPN|RCOS|PPN|POS: %d|%d|%d|%d|%d|%d|%d|%d\t", 
+			qnode_ptr->m_MHTNode_ptr->m_pageNo, 
+			qnode_ptr->m_level,
+			qnode_ptr->m_MHTNode_ptr->m_lchildPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_lchildOffset,
+			qnode_ptr->m_MHTNode_ptr->m_rchildPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
+			qnode_ptr->m_MHTNode_ptr->m_parentPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_parentOffset);
 }
