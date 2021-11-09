@@ -148,9 +148,9 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
  */
 int serialize_mht_block(PMHT_BLOCK pmht_block, uchar **block_buf, uint32 block_buf_len);
 
-int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, char **block_buf, uint32 block_buf_len);
+int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, uchar **block_buf, uint32 block_buf_len);
 
-int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, char **block_buf, uint32 block_buf_len);
+int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, uchar **block_buf, uint32 block_buf_len);
 
 /**
  * @brief      { Building an MHT Block structure from a given memory buffer. }
@@ -167,7 +167,7 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
 
 int convert_qnode_to_mht_hdr_block(PQNode qnode_ptr, PMHT_HEADER_BLOCK *mht_hdrblk_ptr);
 
-int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *mht_hdrblk_ptr);
+int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *mht_cldblk_ptr);
 
 int convert_mht_block_to_qnode(PMHT_BLOCK mhtblk_ptr, PQNode *qnode_ptr);
 

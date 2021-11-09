@@ -249,7 +249,10 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 
 	/******* VARIABLES USED IN TEST ************/
 	PMHT_BLOCK mht_blk_ptr = NULL;
+	PMHT_HEADER_BLOCK mht_hdrblk_ptr = NULL;
+	PMHT_CHILD_NODE_BLOCK mht_cldblk_ptr = NULL;
 	uchar *mhtblock_buffer = NULL;
+	uchar *mhtcldblk_buffer = NULL;
 	/*******************************************/
 
 	if(*pQHeader != NULL && *pQ != NULL)
@@ -300,17 +303,27 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 			while ((peeked_qnode_ptr = peekQueue(*pQHeader)) && peeked_qnode_ptr->m_level < cbd_qnode_ptr->m_level) {
 				popped_qnode_ptr = dequeue(pQHeader, pQ);
 				check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
-				/********** CODE FOR TEST *********/
+
+				/***************** CODE FOR TEST *****************/
 				if(popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == 1 && popped_qnode_ptr->m_level == 0){
-					mhtblock_buffer = (char*)malloc(sizeof(char) * MHT_BLOCK_SIZE);
-					mht_blk_ptr = makeMHTBlock();
-					convert_qnode_to_mht_block(popped_qnode_ptr, &mht_blk_ptr);
-					serialize_mht_block(mht_blk_ptr, &mhtblock_buffer, MHT_BLOCK_SIZE);
-					print_buffer_in_byte_hex(mhtblock_buffer, MHT_BLOCK_SIZE);
-					freeMHTBlock(&mht_blk_ptr);
-					free(mhtblock_buffer);
+					//mhtblock_buffer = (char*)malloc(sizeof(char) * MHT_BLOCK_SIZE);
+					//mht_blk_ptr = makeMHTBlock();
+					//convert_qnode_to_mht_block(popped_qnode_ptr, &mht_blk_ptr);
+					//serialize_mht_block(mht_blk_ptr, &mhtblock_buffer, MHT_BLOCK_SIZE);
+					//print_buffer_in_byte_hex(mhtblock_buffer, MHT_BLOCK_SIZE);
+					//freeMHTBlock(&mht_blk_ptr);
+					//free(mhtblock_buffer);
+					
+					mhtcldblk_buffer = (char*)malloc(sizeof(char) * MHT_CNB_LEN);
+					mht_cldblk_ptr = makeMHTChildNodeBlock();
+					convert_qnode_to_mht_cldnode_block(popped_qnode_ptr, &mht_cldblk_ptr);
+					serialize_cldnode_block(mht_cldblk_ptr, &mhtcldblk_buffer, MHT_CNB_LEN);
+					print_buffer_in_byte_hex(mhtcldblk_buffer, MHT_CNB_LEN);
+					freeMHTChildNodeBlock(&mht_cldblk_ptr);
+					free(mhtcldblk_buffer);
 				}
-				/**********************************/
+				/************************************************/
+
 				printf("PageNo|Level|LCOS|RCOS|POS: %d|%d|%d|%d|%d\t", 
 					popped_qnode_ptr->m_MHTNode_ptr->m_pageNo, 
 					popped_qnode_ptr->m_level,
@@ -542,7 +555,7 @@ int serialize_mht_block(PMHT_BLOCK pmht_block,
 	return ret;
 }
 
-int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, char **block_buf, uint32 block_buf_len){
+int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, uchar **block_buf, uint32 block_buf_len){
 	int ret = 0;
 
 	if(!pmht_header_block || !*block_buf || !block_buf || block_buf_len != MHT_HEADER_LEN) {
@@ -553,15 +566,15 @@ int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, char **block_buf
 		return ret;
 	}
 
-	serialize_mht_block(pmht_header_block->m_nodeBlock, block_buf, MHT_BLOCK_SIZE);
-	memcpy(pmht_header_block->m_Reserved, block_buf + MHT_BLOCK_SIZE, MHT_HEADER_RSVD_SIZE);
+	serialize_mht_block(&(pmht_header_block->m_nodeBlock), block_buf, MHT_BLOCK_SIZE);
+	memcpy(*block_buf + MHT_BLOCK_SIZE, pmht_header_block->m_Reserved, MHT_HEADER_RSVD_SIZE);
 
 	ret = block_buf_len;
 
 	return ret;
 }
 
-int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, char **block_buf, uint32 block_buf_len){
+int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, uchar **block_buf, uint32 block_buf_len){
 	int ret = 0;
 
 	if(!pmht_child_node_block || !*block_buf || !block_buf || block_buf_len != MHT_CNB_LEN) {
@@ -572,7 +585,7 @@ int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, char **
 		return ret;
 	}
 
-	memcpy(*block_buf, (char*)(&(pmht_child_node_block->m_nodeBlock)), MHT_BLOCK_SIZE);
+	serialize_mht_block(&(pmht_child_node_block->m_nodeBlock), block_buf, MHT_BLOCK_SIZE);
 	memcpy(*block_buf + MHT_BLOCK_SIZE, pmht_child_node_block->m_Reserved, MHT_CNB_RSVD_SIZE);
 
 	ret = block_buf_len;
@@ -610,5 +623,39 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr) {
 }
 
 int convert_qnode_to_mht_hdr_block(PQNode qnode_ptr, PMHT_HEADER_BLOCK *mht_hdrblk_ptr){
-	;
+	PMHT_BLOCK pmht_block = NULL;
+
+	if(!qnode_ptr || !(*mht_hdrblk_ptr)){
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(*mht_hdrblk_ptr, "*mht_hdrblk_ptr");
+		debug_print("convert_qnode_to_mht_block", "Null parameters");
+		return -1;
+	}
+
+	pmht_block = &((*mht_hdrblk_ptr)->m_nodeBlock);
+	convert_qnode_to_mht_block(qnode_ptr, &pmht_block);
+	// reserved space remains empty
+	// setting the space to 'R' for testing
+	memset((*mht_hdrblk_ptr)->m_Reserved, 'R', MHT_HEADER_RSVD_SIZE);
+	
+	return 0;
+}
+
+int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *mht_cldblk_ptr){
+	PMHT_BLOCK pmht_block = NULL;
+
+	if(!qnode_ptr || !(*mht_cldblk_ptr)){
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(*mht_cldblk_ptr, "*mht_cldblk_ptr");
+		debug_print("convert_qnode_to_mht_block", "Null parameters");
+		return -1;
+	}
+
+	pmht_block = &((*mht_cldblk_ptr)->m_nodeBlock);
+	convert_qnode_to_mht_block(qnode_ptr, &pmht_block);
+	// reserved space remains empty
+	// setting the space to 'R' for testing
+	memset((*mht_cldblk_ptr)->m_Reserved, 'R', MHT_CNB_RSVD_SIZE);
+	
+	return 0;
 }
