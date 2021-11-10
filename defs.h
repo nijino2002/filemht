@@ -63,6 +63,13 @@ Return:
 */
 void debug_print(const char *from, const char *dbg_msg);
 
+/**
+ * Printing a given buffer in heximal.
+ * @Author   DiLu
+ * @DateTime 2021-11-10T14:25:02+0800
+ * @param    buf                      [A pointer to the buffer]
+ * @param    buf_len                  [Buffer length]
+ */
 void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
 
 #endif

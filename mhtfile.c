@@ -607,6 +607,100 @@ int unserialize_mht_block(char *block_buf,
 	;
 }
 
+int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len) {
+	int ret = 0;
+	uchar *p_buf = NULL;
+
+	if(!qnode_ptr || !(qnode_ptr->m_MHTNode_ptr) || !*mht_block_buf || !mht_block_buf || mht_block_buf_len != MHT_BLOCK_SIZE) {
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(*mht_block_buf, "*mht_block_buf");
+		check_pointer(mht_block_buf, "mht_block_buf");
+		debug_print("qnode_to_mht_buffer", "Error parameters");
+		return ret;
+	}
+
+	memset(*mht_block_buf, 0, MHT_BLOCK_SIZE);
+	p_buf = *mht_block_buf;
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_pageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_level), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, qnode_ptr->m_MHTNode_ptr->m_hash, HASH_LEN);
+	p_buf += HASH_LEN;
+	ret += HASH_LEN;
+	*p_buf = qnode_ptr->m_is_supplementary_node;
+	p_buf += sizeof(char);
+	ret += sizeof(char);
+	*p_buf = qnode_ptr->m_is_zero_node;
+	p_buf += sizeof(char);
+	ret += sizeof(char);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_lchildPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_lchildOffset), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_rchildPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_rchildOffset), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_parentPageNo), sizeof(int));
+	p_buf += sizeof(int);
+	ret += sizeof(int);
+	memcpy(p_buf, &(qnode_ptr->m_MHTNode_ptr->m_parentOffset), sizeof(int));
+	ret += sizeof(int);
+
+	return ret;
+}
+
+int qnode_to_mht_header_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len) {
+	int ret = 0;
+	uchar *p_buf = NULL;
+
+	if(!qnode_ptr || !(qnode_ptr->m_MHTNode_ptr) || !*mht_block_buf || !mht_block_buf || mht_block_buf_len != MHT_HEADER_LEN) {
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(qnode_ptr->m_MHTNode_ptr, "qnode_ptr->m_MHTNode_ptr");
+		check_pointer(*mht_block_buf, "*mht_block_buf");
+		check_pointer(mht_block_buf, "mht_block_buf");
+		debug_print("qnode_to_mht_header_buffer", "Error parameters");
+		return ret;
+	}
+
+	p_buf = *mht_block_buf;
+	qnode_to_mht_buffer(qnode_ptr, &p_buf, MHT_BLOCK_SIZE);
+	memset(p_buf + MHT_BLOCK_SIZE, 'R', MHT_HEADER_RSVD_SIZE);	// QNode structure has no information about reserved space, default to 'R'.
+
+	ret = mht_block_buf_len;
+
+	return ret;
+}
+
+int qnode_to_mht_cldnode_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len){
+	int ret = 0;
+	uchar *p_buf = NULL;
+
+	if(!qnode_ptr || !(qnode_ptr->m_MHTNode_ptr) || !*mht_block_buf || !mht_block_buf || mht_block_buf_len != MHT_CNB_LEN) {
+		check_pointer(qnode_ptr, "qnode_ptr");
+		check_pointer(qnode_ptr->m_MHTNode_ptr, "qnode_ptr->m_MHTNode_ptr");
+		check_pointer(*mht_block_buf, "*mht_block_buf");
+		check_pointer(mht_block_buf, "mht_block_buf");
+		debug_print("qnode_to_mht_header_buffer", "Error parameters");
+		return ret;
+	}
+
+	p_buf = *mht_block_buf;
+	qnode_to_mht_buffer(qnode_ptr, &p_buf, MHT_BLOCK_SIZE);
+	memset(p_buf + MHT_BLOCK_SIZE, 'R', MHT_CNB_RSVD_SIZE);	// QNode structure has no information about reserved space, default to 'R'.
+
+	ret = mht_block_buf_len;
+
+	return ret;
+}
+
 int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr) {
 	if(!qnode_ptr || !(*mhtblk_ptr)){
 		check_pointer(qnode_ptr, "qnode_ptr");
@@ -684,4 +778,6 @@ void print_qnode_info(PQNode qnode_ptr){
 			qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
 			qnode_ptr->m_MHTNode_ptr->m_parentPageNo,
 			qnode_ptr->m_MHTNode_ptr->m_parentOffset);
+
+	return;
 }
