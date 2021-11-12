@@ -300,20 +300,20 @@ int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *
 void print_qnode_info(PQNode qnode_ptr);
 
 /*----------  File Operation Functions  ------------*/
-int fo_create_mhtfile(const char pathname);
+int fo_create_mhtfile(const char *pathname);
 
-int fo_open_mhtfile(const char pathname);
+int fo_open_mhtfile(const char *pathname);
 
-ssize_t fo_read_mht_header_block();
+ssize_t fo_read_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_update_mht_header_block();
+ssize_t fo_update_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_read_mht_child_node_block();
+ssize_t fo_read_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_update_mht_child_node_block();
+ssize_t fo_update_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len);
 
-off_t fo_locate_mht_pos();
+off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
 
-int fo_close_mhtfile();
+int fo_close_mhtfile(int fd);
 
 #endif

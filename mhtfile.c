@@ -781,3 +781,101 @@ void print_qnode_info(PQNode qnode_ptr){
 
 	return;
 }
+
+/*----------  File Operation Functions  ------------*/
+
+int fo_create_mhtfile(const char *pathname){
+	int file_descriptor = -1;
+	int open_flags;
+	mode_t file_perms;
+
+	if(!pathname){
+		check_pointer((char*)pathname, "pathname");
+		debug_print("fo_create_mhtfile", "Null pathname");
+		return file_descriptor;
+	}
+
+	open_flags = O_CREAT | O_WRONLY | O_TRUNC;
+	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+	file_descriptor = open(pathname, open_flags, file_perms);
+
+	return file_descriptor;
+}
+
+int fo_open_mhtfile(const char *pathname){
+	int file_descriptor = -1;
+	int open_flags;
+	mode_t file_perms;
+
+	if(!pathname){
+		check_pointer((char*)pathname, "pathname");
+		debug_print("fo_create_mhtfile", "Null pathname");
+		return file_descriptor;
+	}
+
+	open_flags = O_RDWR;
+	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+	file_descriptor = open(pathname, open_flags, file_perms);
+
+	return file_descriptor;
+}
+
+ssize_t fo_read_mht_header_block(int fd, uchar *buffer, uint32 buffer_len){
+	ssize_t bytes_read = -1;
+
+	if(fd < 0){
+		debug_print("fo_read_mht_header_block", "Invalid fd");
+		return bytes_read;
+	}
+
+	if(!buffer || buffer_len != MHT_HEADER_LEN){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_read_mht_header_block", "Error parameters");
+		return bytes_read;
+	}
+
+	/* Moving file pointer to the beginning of the file */
+	lseek(fd, 0, SEEK_SET);
+	bytes_read = read(fd, buffer, buffer_len);
+
+	return bytes_read;
+}
+
+ssize_t fo_update_mht_header_block(int fd, uchar *buffer, uint32 buffer_len){
+	ssize_t bytes_write = -1;
+
+	if(fd < 0){
+		debug_print("fo_update_mht_header_block", "Invalid fd");
+		return bytes_write;
+	}
+
+	if(!buffer || buffer_len != MHT_HEADER_LEN){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_update_mht_header_block", "Error parameters");
+		return bytes_write;
+	}
+
+	/* Moving file pointer to the beginning of the file */
+	lseek(fd, 0, SEEK_SET);
+	bytes_write = write(fd, buffer, buffer_len);
+
+	return bytes_write;
+}
+
+ssize_t fo_read_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len){
+	;
+}
+
+ssize_t fo_update_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len){
+	;
+}
+
+off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
+	;
+}
+
+int fo_close_mhtfile(int fd){
+	;
+}
