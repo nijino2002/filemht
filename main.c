@@ -6,9 +6,8 @@
 #include "dbqueue.h"
 #include "mhtfile.h"
 
-/****** global variable definitions ******/
-PQNode g_pQHeader = NULL;	// pointer to queue's header
-PQNode g_pQ = NULL;			// pointer to queue's tail (current element)
+extern PQNode g_pQHeader;
+extern PQNode g_pQ;
 
 /*
 Testing functions of queue

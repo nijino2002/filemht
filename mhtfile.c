@@ -46,7 +46,7 @@ PMHT_HEADER_BLOCK makeMHTHeaderBlock(){
 
 	pmht_block = &(pmht_header_block->m_nodeBlock);
 	initMHTBlock(&pmht_block);
-	memset(pmht_header_block->m_Reserved, 0, MHT_HEADER_RSVD_SIZE);
+	memset(pmht_header_block->m_Reserved, 'R', MHT_HEADER_RSVD_SIZE);
 
 	return pmht_header_block;
 }
@@ -61,7 +61,7 @@ PMHT_CHILD_NODE_BLOCK makeMHTChildNodeBlock(){
 
 	pmht_block = &(pmht_cnblk->m_nodeBlock);
 	initMHTBlock(&pmht_block);
-	memset(pmht_cnblk->m_Reserved, 0, MHT_CNB_RSVD_SIZE);
+	memset(pmht_cnblk->m_Reserved, 'R', MHT_CNB_RSVD_SIZE);
 
 	return pmht_cnblk;
 }
@@ -864,18 +864,57 @@ ssize_t fo_update_mht_header_block(int fd, uchar *buffer, uint32 buffer_len){
 	return bytes_write;
 }
 
-ssize_t fo_read_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len){
-	;
+ssize_t fo_read_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len, int rel_distance, int whence){
+	ssize_t bytes_read = -1;
+
+	if(fd < 0){
+		debug_print("fo_read_mht_header_block", "Invalid fd");
+		return bytes_read;
+	}
+
+	if(!buffer || buffer_len != MHT_CNB_LEN){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_read_mht_header_block", "Error parameters");
+		return bytes_read;
+	}
+
+	/* Moving file pointer to the beginning of the file */
+	fo_locate_mht_pos(fd, rel_distance * MHT_CNB_LEN, whence);
+	bytes_read = read(fd, buffer, buffer_len);
+
+	return bytes_read;
 }
 
-ssize_t fo_update_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len){
-	;
+ssize_t fo_update_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len, int rel_distance, int whence){
+	ssize_t bytes_write = -1;
+
+	if(fd < 0){
+		debug_print("fo_update_mht_header_block", "Invalid fd");
+		return bytes_write;
+	}
+
+	if(!buffer || buffer_len != MHT_CNB_LEN){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_update_mht_header_block", "Error parameters");
+		return bytes_write;
+	}
+
+	/* Moving file pointer to the beginning of the file */
+	fo_locate_mht_pos(fd, rel_distance * MHT_CNB_LEN, whence);
+	bytes_write = write(fd, buffer, buffer_len);
+
+	return bytes_write;
 }
 
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
-	;
+	if(fd < 0){
+		debug_print("fo_update_mht_header_block", "Invalid fd");
+		return -1;
+	}
+
+	return lseek(fd, offset, whence);
 }
 
 int fo_close_mhtfile(int fd){
-	;
+	return close(fd);
 }

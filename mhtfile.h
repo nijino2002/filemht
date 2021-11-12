@@ -308,9 +308,17 @@ ssize_t fo_read_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
 
 ssize_t fo_update_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_read_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_read_mht_child_node_block(int fd, 
+									uchar *buffer, 
+									uint32 buffer_len, 
+									int rel_distance, 
+									int whence);
 
-ssize_t fo_update_mht_child_node_block(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_update_mht_child_node_block(int fd, 
+									   uchar *buffer, 
+									   uint32 buffer_len, 
+									   int rel_distance, 
+									   int whence);
 
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
 

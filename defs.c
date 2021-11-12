@@ -1,4 +1,5 @@
 #include "defs.h"
+#include "dbqueue.h"
 
 const uchar g_zeroHash[HASH_LEN] = {0x5f, 0xec, 0xeb, 0x66, 0xff, 0xc8, 0x6f, 0x38,
 									0xd9, 0x52, 0x78, 0x6c, 0x6d, 0x69, 0x6c, 0x79, 
@@ -19,6 +20,10 @@ const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM] = {
 	MHT_BLOCK_OFFSET_POS,
 	MHT_BLOCK_OFFSET_RSVD
 };
+
+/****** global variable definitions ******/
+PQNode g_pQHeader = NULL;	// pointer to queue's header
+PQNode g_pQ = NULL;			// pointer to queue's tail (current element)
 
 void nop() {
 	return;
