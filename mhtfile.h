@@ -11,7 +11,17 @@
 #include "sha256.h"
 
 /*
-66 bytes.
+ * MHT file header, 128 bytes
+*/
+typedef struct _MHT_FILE_HEADER {
+    uchar       m_magicStr[16];
+    uint32      m_rootNodeOffset;   // (RNO) in bytes
+    uint32      m_firstSupplementaryLeafOffset; // (FSLO) in bytes
+    uchar       m_Reserved[MHT_HEADER_RSVD_SIZE];   // 128 - 24 = 104
+} MHT_FILE_HEADER, *PMHT_FILE_HEADER;
+
+/*
+70 bytes.
 ---------------------------------------------------------------------
 | PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS |
 |  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |
@@ -23,37 +33,18 @@ typedef struct _MHT_BLOCK {
 	char	m_hash[HASH_LEN];
 	uchar 	m_isSupplementaryNode;
 	uchar	m_isZeroNode;
+    uchar   m_isRootNode;
 	int 	m_lChildPageNo;
 	int 	m_lChildOffset;
 	int 	m_rChildPageNo;
 	int 	m_rChildOffset;
 	int 	m_parentPageNo;
 	int 	m_parentOffset;
+    uchar   m_Reserved[MHT_BLOCK_RSVD_SIZE];
 } MHT_BLOCK, *PMHT_BLOCK;
 
-/*
---------------------
-| MHT BLOCK | RSVD |
-|     66    |  62  |
---------------------
-*/
-typedef struct _MHT_HEADER_BLOCK {
-	MHT_BLOCK m_nodeBlock;
-	char 	m_Reserved[MHT_HEADER_RSVD_SIZE];
-} MHT_HEADER_BLOCK, *PMHT_HEADER_BLOCK;
-
-/*
---------------------
-| MHT BLOCK | RSVD |
-|     66    |   4  |
---------------------
-*/
-typedef struct _MHT_CHILD_NODE_BLOCK{
-	MHT_BLOCK m_nodeBlock;
-	char 	m_Reserved[MHT_CNB_RSVD_SIZE];
-} MHT_CHILD_NODE_BLOCK, *PMHT_CHILD_NODE_BLOCK;
-
 /*-------------  MHT block processing functions  --------------*/
+
 /**
  * Initializing an MHT block structure.
  * @Author   DiLu
@@ -71,22 +62,6 @@ void initMHTBlock(PMHT_BLOCK *pmht_block);
 PMHT_BLOCK makeMHTBlock();
 
 /**
- * Creating an MHT header block structure. The created object needs to be destroyed by freeMHTHeaderBlock().
- * @Author   DiLu
- * @DateTime 2021-11-10T14:08:03+0800
- * @return   [A pointer to the created MHT header block structure]
- */
-PMHT_HEADER_BLOCK makeMHTHeaderBlock();
-
-/**
- * Creating an MHT child node block structure. The created object needs to be destroyed by freeMHTChildNodeBlock().
- * @Author   DiLu
- * @DateTime 2021-11-10T14:08:36+0800
- * @return   [A pointer to the created MHT child node block structure]
- */
-PMHT_CHILD_NODE_BLOCK makeMHTChildNodeBlock();
-
-/**
  * Freeing an MHT block structure.
  * @Author   DiLu
  * @DateTime 2021-11-10T14:09:14+0800
@@ -94,23 +69,15 @@ PMHT_CHILD_NODE_BLOCK makeMHTChildNodeBlock();
  */
 void freeMHTBlock(PMHT_BLOCK *pmht_block);
 
-/**
- * Freeing an MHT header block structure.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:10:04+0800
- * @param    pmht_header_block        [A 2-d pointer to the MHT header block to be freed]
- */
-void freeMHTHeaderBlock(PMHT_HEADER_BLOCK *pmht_header_block);
-
-/**
- * Freeing an MHT child node block structure.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:10:27+0800
- * @param    pmht_child_node_block    [A 2-d pointer to the MHT child node block to be freed]
- */
-void freeMHTChildNodeBlock(PMHT_CHILD_NODE_BLOCK *pmht_child_node_block);
-
 /*----------  MHT file functions  ---------------*/
+
+/**
+ * @brief      Makes an MHT file header.
+ *
+ * @return     The new created MHT file pointer.
+ */
+PMHT_FILE_HEADER makeMHTFileHeader();
+
 /**
  * A test for building an MHT queue. Just for testing.
  * @Author   DiLu
@@ -196,26 +163,17 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
 int serialize_mht_block(PMHT_BLOCK pmht_block, uchar **block_buf, uint32 block_buf_len);
 
 /**
- * Serializing an MHT header block into a memory buffer.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:12:06+0800
- * @param    pmht_header_block        [A pointer to the MHT header block structure]
- * @param    block_buf                [A 2-d pointer to the buffer that is used to storing MHT header block data]
- * @param    block_buf_len            [The size of the buffer above]
- * @return                            [How many bytes has been processed.]
+ * @brief      Serializing an MHT file header into a memory buffer.
+ *
+ * @param[in]  pmht_file_header  A pointer to MHT file header
+ * @param      header_buf        A 2-d pointer to the output memory buffer
+ * @param[in]  header_buf_len    The buffer length
+ *
+ * @return     How many bytes has been processed.
  */
-int serialize_mhthdr_block(PMHT_HEADER_BLOCK pmht_header_block, uchar **block_buf, uint32 block_buf_len);
-
-/**
- * Serializing an MHT child node block into a memory buffer.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:15:30+0800
- * @param    pmht_child_node_block    [A pointer to the MHT child node block structure]
- * @param    block_buf                [A 2-d pointer to the buffer that is used to storing MHT child node block data]
- * @param    block_buf_len            [The size of the buffer above]
- * @return                            [How many bytes has been processed.]
- */
-int serialize_cldnode_block(PMHT_CHILD_NODE_BLOCK pmht_child_node_block, uchar **block_buf, uint32 block_buf_len);
+int serialize_mht_file_header(PMHT_FILE_HEADER pmht_file_header, 
+                            uchar **header_buf,
+                            uint32 header_buf_len);
 
 /**
  * @brief      Restoring an MHT Block structure from a given memory buffer.
@@ -240,28 +198,6 @@ int unserialize_mht_block(char *block_buf, uint32 block_buf_len, PMHT_BLOCK *pmh
 int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len);
 
 /**
- * Directly serialzing a QNode structure into memory buffer (MHT header block buffer). 
- * @Author   DiLu
- * @DateTime 2021-11-10T14:19:16+0800
- * @param    qnode_ptr                [A pointer to a QNode structure]
- * @param    mht_block_buf            [A 2-d pointer to the buffer that is used to storing serialized data]
- * @param    mht_block_buf_len        [The size of the buffer above]
- * @return                            [How many bytes has been processed.]
- */
-int qnode_to_mht_header_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len);
-
-/**
- * Directly serialzing a QNode structure into memory buffer (MHT child node block buffer). 
- * @Author   DiLu
- * @DateTime 2021-11-10T14:19:16+0800
- * @param    qnode_ptr                [A pointer to a QNode structure]
- * @param    mht_block_buf            [A 2-d pointer to the buffer that is used to storing serialized data]
- * @param    mht_block_buf_len        [The size of the buffer above]
- * @return                            [How many bytes has been processed.]
- */
-int qnode_to_mht_cldnode_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len);
-
-/**
  * Converting a QNode structure into MHT block structure.
  * @Author   DiLu
  * @DateTime 2021-11-10T14:19:24+0800
@@ -270,26 +206,6 @@ int qnode_to_mht_cldnode_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 
  * @return                            [Status of function execution. 0 for success, other values for failures.]
  */
 int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
-
-/**
- * Converting a QNode structure into MHT header block structure.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:19:24+0800
- * @param    qnode_ptr                [A pointer to QNode structure]
- * @param    mht_hdrblk_ptr               [A 2-d pointer to the MHT header block structure]
- * @return                            [Status of function execution. 0 for success, other values for failures.]
- */
-int convert_qnode_to_mht_hdr_block(PQNode qnode_ptr, PMHT_HEADER_BLOCK *mht_hdrblk_ptr);
-
-/**
- * Converting a QNode structure into MHT child node block structure.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:19:24+0800
- * @param    qnode_ptr                [A pointer to QNode structure]
- * @param    mht_cldblk_ptr               [A 2-d pointer to the MHT child node block structure]
- * @return                            [Status of function execution. 0 for success, other values for failures.]
- */
-int convert_qnode_to_mht_cldnode_block(PQNode qnode_ptr, PMHT_CHILD_NODE_BLOCK *mht_cldblk_ptr);
 
 /**
  * Printing a QNode structure for debugging.
@@ -304,21 +220,21 @@ int fo_create_mhtfile(const char *pathname);
 
 int fo_open_mhtfile(const char *pathname);
 
-ssize_t fo_read_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_read_mht_file_header(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_update_mht_header_block(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_update_mht_file_header(int fd, uchar *buffer, uint32 buffer_len);
 
-ssize_t fo_read_mht_child_node_block(int fd, 
-									uchar *buffer, 
-									uint32 buffer_len, 
-									int rel_distance, 
-									int whence);
+ssize_t fo_read_mht_block(int fd, 
+							uchar *buffer, 
+							uint32 buffer_len, 
+							int rel_distance, 
+							int whence);
 
-ssize_t fo_update_mht_child_node_block(int fd, 
-									   uchar *buffer, 
-									   uint32 buffer_len, 
-									   int rel_distance, 
-									   int whence);
+ssize_t fo_update_mht_block(int fd, 
+							uchar *buffer, 
+							uint32 buffer_len, 
+							int rel_distance, 
+							int whence);
 
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
 

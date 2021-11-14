@@ -8,10 +8,9 @@
 #define HASH_LEN	32
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
 #define MHT_HEADER_LEN	128
-#define MHT_CNB_LEN		70
-#define MHT_BLOCK_SIZE		66
-#define MHT_HEADER_RSVD_SIZE	62
-#define MHT_CNB_RSVD_SIZE	4
+#define MHT_BLOCK_SIZE		70
+#define MHT_HEADER_RSVD_SIZE	104
+#define MHT_BLOCK_RSVD_SIZE	    4
 #define MHT_BLOCK_OFFSET_PAGENO		0
 #define MHT_BLOCK_OFFSET_LEVEL		sizeof(int)
 #define MHT_BLOCK_OFFSET_HASH		(MHT_BLOCK_OFFSET_LEVEL + sizeof(int))
@@ -25,9 +24,13 @@
 #define MHT_BLOCK_OFFSET_POS		(MHT_BLOCK_OFFSET_PPN + sizeof(int))
 #define MHT_BLOCK_OFFSET_RSVD		(MHT_BLOCK_OFFSET_POS + sizeof(int))
 #define MHT_BLOCK_ATRRIB_NUM		12
+#define UNASSIGNED_OFFSET   0
 #define UNASSIGNED_PAGENO	-1
 #define SINGLENODECMB_PAGENO	-2
 #define NODELEVEL_LEAF		0
+#define MHT_FILE_MAGIC_STRING       "mhtfile_v1.0"
+#define MHT_FILE_MAGIC_STRING_LEN       16
+#define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
 
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
@@ -39,6 +42,7 @@ typedef enum {FALSE, TRUE} bool;
 
 extern const uchar g_zeroHash[HASH_LEN];
 extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];
+extern int g_mhtFileFD;
 
 /*
 Do nothing.

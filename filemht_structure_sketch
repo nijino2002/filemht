@@ -3,33 +3,30 @@ This is a description on the design of file-based MHT structure.
 1. File structure overview:
 
 ----------------------------------------------------------------------------------------------
-| File header (128 bytes)   | Child node block 1 | Child node block 2 |      |
-| ROOT Node Info (66 bytes, |                    |                    | .... | ----> growing
-| 62 bytes reserved).       |      70 bytes      |       70 bytes     |      |
+|                           |    Node block 1    |    Node block 2    |      |
+|  File header (128 bytes)  |                    |                    | .... | ----> growing
+|                           |      70 bytes      |       70 bytes     |      |
 ----------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------
+                  |    Node block N    |     Root Node block     |
+----> growing     |                    |                         |
+                  |      70 bytes      |       70 bytes          |
+------------------------------------------------------------------
 
 2. File header (FH) structure (ROOT node, 128 bytes in total) (Unit: byte):
 
-----------------------------------------------------------------------------
-| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
-|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |  62  |
-----------------------------------------------------------------------------
+-----------------------------
+| MGCS | RNO | FSLO | RSVD  |
+|  16  |  4  |  4   |  104  |
+-----------------------------
 
-1) Page No. (PN): 4 bytes
-2) Node Level (NL): 4 bytes
-3) Hash (HSH): 32 bytes, SHA256 hash value
-4) Is supplementary node (ISN): 1 byte.
-5) Is zero-hashed node (IZN): 1 byte.
-6) Left Child Page No. (LCPN): 4 bytes
-7) Left Child Offset (LCOS): 4 bytes, the offset of the left child node in MHT file
-8) Right Child Page No. (RCPN): 4 bytes
-9) Right Child Offset (RCOS): 4 bytes, the offset of the right child node in MHT file
-10) Parent Page No. (PPN): 4 bytes
-11) Parent Offset (POS): 4 bytes, the offset of the parent node in MHT file
-12) Reserved region (RSVD): 62 bytes.
+1) Magic string (MGCS): 16 bytes, always "MHTFILE";
+2) Root node offset (RNO): 4 bytes;
+3) First supplementary leaf offset (FSLO): 4 bytes;
+4) Reserved (RSVD): 104 bytes.
 
-
-3. Child node blockm (CNB) structure (70 bytes in total):
+3. MHT block (MHTB) structure (70 bytes in total):
 
 ----------------------------------------------------------------------------
 | PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |

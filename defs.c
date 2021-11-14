@@ -24,6 +24,7 @@ const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM] = {
 /****** global variable definitions ******/
 PQNode g_pQHeader = NULL;	// pointer to queue's header
 PQNode g_pQ = NULL;			// pointer to queue's tail (current element)
+int g_mhtFileFD = -1;		// file descriptor for the MHT file
 
 void nop() {
 	return;
