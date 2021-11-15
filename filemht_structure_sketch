@@ -21,7 +21,7 @@ This is a description on the design of file-based MHT structure.
 |  16  |  4  |  4   |  104  |
 -----------------------------
 
-1) Magic string (MGCS): 16 bytes, always "MHTFILE";
+1) Magic string (MGCS): 16 bytes, always be "mhtfile_v1.0";
 2) Root node offset (RNO): 4 bytes;
 3) First supplementary leaf offset (FSLO): 4 bytes;
 4) Reserved (RSVD): 104 bytes.
