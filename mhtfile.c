@@ -189,6 +189,7 @@ void testMHTQueue(){
 void buildMHTFile(){
 	PQNode popped_qnode_ptr = NULL;
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
+	uchar *mhtblk_buffer = NULL;
 
 	// Preparing MHT file
 	// Creating a new MHT file. Note that if the file exists, it will be truncated!
@@ -205,31 +206,35 @@ void buildMHTFile(){
 	}
 
 	// Initializing MHT file header
+	// Header will be updated at the end of building MHT file
 	mht_file_header_ptr = makeMHTFileHeader();
 	
 	process_all_pages(&g_pQHeader, &g_pQ);
 	deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
 
 	//dequeue remaining nodes (actually, only root node remains)
-	/******* VARIABLES USED IN TEST ************/
-
-	/*******************************************/
 	while(popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ)){
 		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
-
-		/***************** CODE FOR TEST *****************/
-		// fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_SET);
-		// fo_update_mht_header_block(g_mhtFileFD, mhthdrblk_buffer, MHT_HEADER_LEN);
-		/************************************************/
+		// Building MHT blocks based on dequeued nodes, then writing to MHT file.
+		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+		if(g_mhtFileFD > 0) {
+			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+		}
+		free(mhtblk_buffer); mhtblk_buffer = NULL;
 
 		print_qnode_info(popped_qnode_ptr);
 		// free node
 		deleteQNode(&popped_qnode_ptr);
 	} //while
 
+	/***** Updating MHT file header *****/
+
 	printQueue(g_pQHeader);
 
 	freeQueue(&g_pQHeader, &g_pQ);
+	fo_close_mhtfile(g_mhtFileFD);
 
 	return;
 }
@@ -251,11 +256,8 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	PMHTNode mhtnode_ptr = NULL;
 	bool bCombined = FALSE;
 	bool bDequeueExec = FALSE;	// whether dequeue is executed (for printf control)
-
-	/******* VARIABLES USED IN TEST ************/
 	PMHT_BLOCK mht_blk_ptr = NULL;
 	uchar *mhtblk_buffer = NULL;
-	/*******************************************/
 
 	if(*pQHeader != NULL && *pQ != NULL)
 		freeQueue(pQHeader, pQ);
@@ -306,7 +308,16 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 				popped_qnode_ptr = dequeue(pQHeader, pQ);
 				check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
 
+				// Building MHT blocks based on dequeued nodes, then writing to MHT file.
+				mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+				if(g_mhtFileFD > 0) {
+					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+				}
+				free(mhtblk_buffer); mhtblk_buffer = NULL;
 				/***************** CODE FOR TEST *****************/
+				/*
 				if(popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == 1 && 
 					popped_qnode_ptr->m_level == 0){
 					mhtblk_buffer = (uchar*) malloc(sizeof(MHT_BLOCK));
@@ -317,6 +328,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 					freeMHTBlock(&mht_blk_ptr);
 					free(mhtblk_buffer);
 				}
+				*/
 				/************************************************/
 
 				print_qnode_info(popped_qnode_ptr);
@@ -344,6 +356,7 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 	bool bCombined = FALSE;
 	bool bDequeueExec = FALSE;	// whether dequeue is executed (for printf control)
 	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
+	uchar *mhtblk_buffer = NULL;
 
 	// Both of these two pointer cannot be NULL.
 	if(!*pQHeader || !*pQ){
@@ -399,6 +412,16 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				   peeked_qnode_ptr->m_level < cbd_qnode_ptr->m_level) {
 				popped_qnode_ptr = dequeue(pQHeader, pQ);
 				check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
+
+				// Building MHT blocks based on dequeued nodes, then writing to MHT file.
+				mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+				if(g_mhtFileFD > 0) {
+					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+				}
+				free(mhtblk_buffer); mhtblk_buffer = NULL;
+
 				print_qnode_info(popped_qnode_ptr);
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;

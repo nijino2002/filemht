@@ -25,6 +25,8 @@ const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM] = {
 PQNode g_pQHeader = NULL;	// pointer to queue's header
 PQNode g_pQ = NULL;			// pointer to queue's tail (current element)
 int g_mhtFileFD = -1;		// file descriptor for the MHT file
+uint32 g_mhtFileRootNodeOffset = UNASSIGNED_OFFSET;	// root node offset (in byte)
+uint32 g_mhtFileFSLO = UNASSIGNED_OFFSET;	// first supplementary leaf offset (in byte)
 
 void nop() {
 	return;
