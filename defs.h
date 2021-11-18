@@ -40,9 +40,11 @@ typedef unsigned short int uint16;
 typedef unsigned char uchar;
 typedef enum {FALSE, TRUE} bool;
 
-extern const uchar g_zeroHash[HASH_LEN];
-extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];
-extern int g_mhtFileFD;
+extern const uchar g_zeroHash[HASH_LEN];	// firstly defined in defs.c
+extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];		// firstly defined in defs.c
+extern uint32 g_mhtFileRootNodeOffset;		// firstly defined in defs.c
+extern uint32 g_mhtFirstSplymtLeafOffset;		// firstly defined in defs.c
+extern int g_mhtFileFD;		// firstly defined in defs.c
 
 /*
 Do nothing.

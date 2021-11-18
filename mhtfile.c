@@ -220,7 +220,8 @@ void buildMHTFile(){
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 		if(g_mhtFileFD > 0) {
-			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+			g_mhtFileRootNodeOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);	//temporarily storing root node offset in MHT file
+			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);	// write root block to MHT file
 		}
 		free(mhtblk_buffer); mhtblk_buffer = NULL;
 
@@ -355,6 +356,7 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 	uint32 qHeaderLevel = 0;
 	bool bCombined = FALSE;
 	bool bDequeueExec = FALSE;	// whether dequeue is executed (for printf control)
+	bool bEnctrFirstSplymtLeaf = FALSE;		// whether firstly encountering the first supplementary leaf
 	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
 	uchar *mhtblk_buffer = NULL;
 
@@ -418,6 +420,10 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 				if(g_mhtFileFD > 0) {
+					if(!bEnctrFirstSplymtLeaf) {
+						g_mhtFirstSplymtLeafOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);
+						bEnctrFirstSplymtLeaf = TRUE;
+					}
 					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 				}
 				free(mhtblk_buffer); mhtblk_buffer = NULL;
