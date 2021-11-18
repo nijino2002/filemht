@@ -190,6 +190,7 @@ void buildMHTFile(){
 	PQNode popped_qnode_ptr = NULL;
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
 	uchar *mhtblk_buffer = NULL;
+	uchar *mhthdr_buffer = NULL;
 
 	// Preparing MHT file
 	// Creating a new MHT file. Note that if the file exists, it will be truncated!
@@ -231,6 +232,14 @@ void buildMHTFile(){
 	} //while
 
 	/***** Updating MHT file header *****/
+	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	if(mht_file_header_ptr && mhthdr_buffer){
+		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;
+		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(g_mhtFileFD, mhthdr_buffer, MHT_HEADER_LEN);
+		free(mhthdr_buffer);
+	}
 
 	printQueue(g_pQHeader);
 
@@ -832,7 +841,6 @@ ssize_t fo_update_mht_block(int fd,
 		return bytes_write;
 	}
 
-	/* Moving file pointer to the beginning of the file */
 	fo_locate_mht_pos(fd, rel_distance * MHT_BLOCK_SIZE, whence);
 	bytes_write = write(fd, buffer, buffer_len);
 
