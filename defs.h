@@ -7,6 +7,7 @@
 
 #define HASH_LEN	32
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
+#define RESERVED_CHAR	'R'
 #define MHT_HEADER_LEN	128
 #define MHT_BLOCK_SIZE		70
 #define MHT_HEADER_RSVD_SIZE	104

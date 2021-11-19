@@ -19,9 +19,15 @@ PMHT_FILE_HEADER makeMHTFileHeader(){
     memcpy(pmht_file_header->m_magicStr, MHT_FILE_MAGIC_STRING, sizeof(MHT_FILE_MAGIC_STRING));
     pmht_file_header->m_rootNodeOffset = UNASSIGNED_OFFSET;
     pmht_file_header->m_firstSupplementaryLeafOffset = UNASSIGNED_OFFSET;
-    memset(pmht_file_header->m_Reserved, 0, MHT_HEADER_RSVD_SIZE);
+    memset(pmht_file_header->m_Reserved, RESERVED_CHAR, MHT_HEADER_RSVD_SIZE);
 
     return pmht_file_header;
+}
+
+void freeMHTFileHeader(PMHT_FILE_HEADER *pmht_file_header){
+	(*pmht_file_header) != NULL ? free(*pmht_file_header) : nop();
+	*pmht_file_header = NULL;
+	return;
 }
 
 void initMHTBlock(PMHT_BLOCK *pmht_block){
@@ -239,6 +245,7 @@ void buildMHTFile(){
 		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
 		fo_update_mht_file_header(g_mhtFileFD, mhthdr_buffer, MHT_HEADER_LEN);
 		free(mhthdr_buffer);
+		freeMHTFileHeader(&mht_file_header_ptr);
 	}
 
 	printQueue(g_pQHeader);
@@ -284,7 +291,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 100; i++){	// i refers to page number
+	for(i = 0; i < 20; i++){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
@@ -429,7 +436,7 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 				if(g_mhtFileFD > 0) {
-					if(!bEnctrFirstSplymtLeaf) {
+					if(!bEnctrFirstSplymtLeaf && popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == -1 && popped_qnode_ptr->m_level == 0) {
 						g_mhtFirstSplymtLeafOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);
 						bEnctrFirstSplymtLeaf = TRUE;
 					}

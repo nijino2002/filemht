@@ -79,6 +79,14 @@ void freeMHTBlock(PMHT_BLOCK *pmht_block);
 PMHT_FILE_HEADER makeMHTFileHeader();
 
 /**
+ * Freeing an MHT file header structure pointer.
+ * @Author   DiLu
+ * @DateTime 2021-11-19T15:31:07+0800
+ * @param    pmht_file_header         [A 2-d pointer to the MHT file header to be freed]
+ */
+void freeMHTFileHeader(PMHT_FILE_HEADER *pmht_file_header);
+
+/**
  * A test for building an MHT queue. Just for testing.
  * @Author   DiLu
  * @DateTime 2021-11-10T14:11:07+0800
