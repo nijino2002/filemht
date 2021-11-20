@@ -24,7 +24,8 @@ const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM] = {
 /****** global variable definitions ******/
 PQNode g_pQHeader = NULL;	// pointer to queue's header
 PQNode g_pQ = NULL;			// pointer to queue's tail (current element)
-int g_mhtFileFD = -1;		// file descriptor for the MHT file
+int g_mhtFileFD = MHT_INVALID_FILE_DSCPT;		// file descriptor for the MHT file
+int g_mhtFileFdRd = MHT_INVALID_FILE_DSCPT;		// file descriptor only for reading the MHT file
 uint32 g_mhtFileRootNodeOffset = UNASSIGNED_OFFSET;	// root node offset (in byte)
 uint32 g_mhtFirstSplymtLeafOffset = UNASSIGNED_OFFSET;	// offset of the first supplementary leaf node (in byte)
 uint32 g_mhtFileFSLO = UNASSIGNED_OFFSET;	// first supplementary leaf offset (in byte)

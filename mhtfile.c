@@ -256,6 +256,82 @@ void buildMHTFile(){
 	return;
 }
 
+int initOpenMHTFileWR(uchar *pathname){
+	int ret = -1;
+
+	if(!pathname){
+		debug_print("initOpenMHTFile", "Null pathname");
+		return ret;
+	}
+
+	// file descriptor 0, 1 and 2 refer to STDIN, STDOUT and STDERR
+	if(g_mhtFileFdRd > 2) {
+		fo_close_mhtfile(g_mhtFileFdRd);
+	}
+
+	// open MHT file in "READ & WRITE" mode
+	g_mhtFileFdRd = fo_open_mhtfile(pathname);
+	ret = g_mhtFileFdRd;
+
+	return ret;
+}
+
+PMHT_FILE_HEADER readMHTFileHeader() {
+	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
+	uchar *mht_file_header_buffer = NULL;
+	uchar *tmp_ptr = NULL;
+
+	if(g_mhtFileFdRd < 3){
+		debug_print("readMHTFileHeader", "Invalid file descriptor for reading");
+		return NULL;
+	}
+
+	if(!(mht_file_header_buffer = (uchar*) malloc(MHT_HEADER_LEN))) {
+		debug_print("readMHTFileHeader", "Failed to allocate memory for mht_file_header_buffer");
+		return NULL;
+	}
+	memset(mht_file_header_buffer, 0, MHT_HEADER_LEN);
+
+	fo_read_mht_file_header(g_mhtFileFdRd, mht_file_header_buffer, MHT_HEADER_LEN);
+	// Preparing to parse MHT file header buffer into MHT file header structure
+	if(!(mht_file_header_ptr = (PMHT_FILE_HEADER) malloc(sizeof(MHT_FILE_HEADER)))) {
+		debug_print("readMHTFileHeader", "Failed to allocate memory for mht_file_header_ptr");
+		return NULL;
+	}
+	tmp_ptr = mht_file_header_buffer;
+	memcpy(mht_file_header_ptr->m_magicStr, tmp_ptr, MHT_FILE_MAGIC_STRING_LEN);
+	tmp_ptr += MHT_FILE_MAGIC_STRING_LEN;
+	memcpy(&(mht_file_header_ptr->m_rootNodeOffset), tmp_ptr, sizeof(uint32));
+	tmp_ptr += sizeof(uint32);
+	memcpy(&(mht_file_header_ptr->m_firstSupplementaryLeafOffset), tmp_ptr, sizeof(uint32));
+	tmp_ptr += sizeof(uint32);
+	memcpy(mht_file_header_ptr->m_Reserved, tmp_ptr, MHT_HEADER_RSVD_SIZE);
+
+	return mht_file_header_ptr;
+}
+
+PMHT_BLOCK searchPageByNo(int page_no) {
+	PMHT_BLOCK mhtblk_ptr = NULL;	// MHT block preserving the found page
+	uchar *tmpblk_buf = NULL;	// temporarily storing MHT block buffer
+	PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
+	bool	bPageBlockFound = FALSE;
+
+	if(g_mhtFileFdRd < 3){
+		debug_print("searchPageByNo", "Invalid file descriptor");
+		return NULL;
+	}
+
+	if(page_no < 0) {
+		debug_print("searchPageByNo", "Invalid page number");
+		return NULL;
+	}
+
+	if(!(mhtfilehdr_ptr = readMHTFileHeader())){
+		debug_print("searchPageByNo", "Failed to read MHT file header");
+		return NULL;
+	}
+}
+
 /*----------  Helper Functions  ---------------*/
 
 void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
@@ -436,7 +512,9 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ){
 				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 				if(g_mhtFileFD > 0) {
-					if(!bEnctrFirstSplymtLeaf && popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == -1 && popped_qnode_ptr->m_level == 0) {
+					if(!bEnctrFirstSplymtLeaf && 
+						popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == UNASSIGNED_PAGENO && 
+						popped_qnode_ptr->m_level == 0) {
 						g_mhtFirstSplymtLeafOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);
 						bEnctrFirstSplymtLeaf = TRUE;
 					}
@@ -701,6 +779,25 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr) {
 	memset((*mhtblk_ptr)->m_Reserved, 'R', MHT_BLOCK_RSVD_SIZE);
 
 	return 0;
+}
+
+void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset) {
+	if(!mht_blk_buffer || mht_blk_buffer_len != MHT_BLOCK_SIZE || !is_valid_offset_in_mht_block_buffer(offset)) {
+		check_pointer(mht_blk_buffer, "mht_blk_buffer");
+		debug_print("get_section_addr_in_mht_block_buffer", "Invalid parameters");
+		return NULL;
+	}
+	
+}
+
+bool is_valid_offset_in_mht_block_buffer(uint32 offset){
+	int i = 0;
+	for(i = 0; i < MHT_BLOCK_ATRRIB_NUM; i++){
+		if(g_MhtAttribOffsetArray[i] == offset)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 void print_qnode_info(PQNode qnode_ptr){

@@ -32,6 +32,7 @@
 #define MHT_FILE_MAGIC_STRING       "mhtfile_v1.0"
 #define MHT_FILE_MAGIC_STRING_LEN       16
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
+#define MHT_INVALID_FILE_DSCPT      -1      // invalid file descriptor value
 
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
@@ -46,6 +47,7 @@ extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];		// firstly defin
 extern uint32 g_mhtFileRootNodeOffset;		// firstly defined in defs.c
 extern uint32 g_mhtFirstSplymtLeafOffset;		// firstly defined in defs.c
 extern int g_mhtFileFD;		// firstly defined in defs.c
+extern int g_mhtFileFdRd;      // firstly defined in defs.c
 
 /*
 Do nothing.

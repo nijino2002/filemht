@@ -14,7 +14,7 @@
  * MHT file header, 128 bytes
 */
 typedef struct _MHT_FILE_HEADER {
-    uchar       m_magicStr[16];
+    uchar       m_magicStr[MHT_FILE_MAGIC_STRING_LEN];
     uint32      m_rootNodeOffset;   // (RNO) in bytes
     uint32      m_firstSupplementaryLeafOffset; // (FSLO) in bytes
     uchar       m_Reserved[MHT_HEADER_RSVD_SIZE];   // 128 - 24 = 104
@@ -101,6 +101,32 @@ Return:
 	NULL.
 */
 void buildMHTFile();
+
+/**
+ * @brief      Initializing opening MHT file for reading and writing.
+ *
+ * @param      pathname  The path name
+ *
+ * @return     The file descriptor refering to the opened MHT file.
+ */
+int initOpenMHTFileWR(uchar *pathname);
+
+/**
+ * @brief      Reading MHT file header and returning a new created pointer to the file header structure.
+ *
+ * @return     The new created pointer to the file header structure.
+ */
+PMHT_FILE_HEADER readMHTFileHeader();
+
+/**
+ * @brief      Searching the corresponding page block in MHT file based on given page number.
+ *
+ * @param[in]  page_no  The page number
+ *
+ * @return     A new created pointer to an MHT block structure that preserving the found page block.
+ *             Null will be returned if errors occur or no page is found.
+ */
+PMHT_BLOCK searchPageByNo(int page_no);
 
 /*----------  Helper Functions  ---------------*/
 
@@ -214,6 +240,10 @@ int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_bloc
  * @return                            [Status of function execution. 0 for success, other values for failures.]
  */
 int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
+
+void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
+
+bool is_valid_offset_in_mht_block_buffer(uint32 offset);
 
 /**
  * Printing a QNode structure for debugging.
