@@ -22,10 +22,10 @@ typedef struct _MHT_FILE_HEADER {
 
 /*
 70 bytes.
----------------------------------------------------------------------
-| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS |
-|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |
----------------------------------------------------------------------
+----------------------------------------------------------------------------
+| PN | NL | HSH | ISN | IZN | LCPN | LCOS | RCPN | RCOS | PPN | POS | RSVD |
+|  4 |  4 |  32 |  1  |  1  |  4   |   4  |   4  |   4  |  4  |  4  |   4  |
+----------------------------------------------------------------------------
 */
 typedef struct _MHT_BLOCK {
 	int		m_pageNo;
@@ -265,8 +265,15 @@ ssize_t fo_update_mht_file_header(int fd, uchar *buffer, uint32 buffer_len);
 ssize_t fo_read_mht_block(int fd, 
 							uchar *buffer, 
 							uint32 buffer_len, 
-							int rel_distance, 
+							int rel_distance,    // number of blocks from whence
 							int whence);
+
+ssize_t fo_read_mht_block2(int fd, 
+                            uchar *buffer, 
+                            uint32 buffer_len, 
+                            int offset,         // number of bytes from whence
+                            int whence);
+
 
 ssize_t fo_update_mht_block(int fd, 
 							uchar *buffer, 

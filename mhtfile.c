@@ -312,9 +312,12 @@ PMHT_FILE_HEADER readMHTFileHeader() {
 
 PMHT_BLOCK searchPageByNo(int page_no) {
 	PMHT_BLOCK mhtblk_ptr = NULL;	// MHT block preserving the found page
+	uchar *rootnode_buf = NULL;		// root node block buffer
 	uchar *tmpblk_buf = NULL;	// temporarily storing MHT block buffer
 	PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
 	bool	bPageBlockFound = FALSE;
+	uint32	node_level = NODELEVEL_LEAF;
+	uint32	node_page_no = UNASSIGNED_PAGENO;		// temporarily preserving MHT block's page number
 
 	if(g_mhtFileFdRd < 3){
 		debug_print("searchPageByNo", "Invalid file descriptor");
@@ -329,6 +332,20 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 	if(!(mhtfilehdr_ptr = readMHTFileHeader())){
 		debug_print("searchPageByNo", "Failed to read MHT file header");
 		return NULL;
+	}
+
+	rootnode_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+	memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
+	fo_read_mht_block2(g_mhtFileFdRd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
+	tmpblk_buf = rootnode_buf;
+	while((node_level = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF) {
+		node_page_no = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO));
+		if(page_no <= node_page_no){	// go to left child block
+			;
+		}
+		else{	// go to right child block
+			;
+		}
 	}
 }
 
@@ -788,6 +805,7 @@ void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk
 		return NULL;
 	}
 	
+	return (void*)(mht_blk_buffer + offset);
 }
 
 bool is_valid_offset_in_mht_block_buffer(uint32 offset){
@@ -920,8 +938,33 @@ ssize_t fo_read_mht_block(int fd,
 		return bytes_read;
 	}
 
-	/* Moving file pointer to the beginning of the file */
+	/* Moving file pointer to the position whence + rel_distance * MHT_BLOCK_SIZE */
 	fo_locate_mht_pos(fd, rel_distance * MHT_BLOCK_SIZE, whence);
+	bytes_read = read(fd, buffer, buffer_len);
+
+	return bytes_read;
+}
+
+ssize_t fo_read_mht_block2(int fd, 
+                            uchar *buffer, 
+                            uint32 buffer_len, 
+                            int offset,         // number of bytes from whence
+                            int whence){
+	ssize_t bytes_read = -1;
+
+	if(fd < 0){
+		debug_print("fo_read_mht_block2", "Invalid fd");
+		return bytes_read;
+	}
+
+	if(!buffer || buffer_len != MHT_BLOCK_SIZE){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_read_mht_block2", "Error parameters");
+		return bytes_read;
+	}
+
+	/* Moving file pointer to the position: whence + offset */
+	fo_locate_mht_pos(fd, offset, whence);
 	bytes_read = read(fd, buffer, buffer_len);
 
 	return bytes_read;
