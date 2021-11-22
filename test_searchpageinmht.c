@@ -11,12 +11,16 @@ extern PQNode g_pQ;
 
 int main(int argc, char const *argv[])
 {
+	PMHT_BLOCK mhtblk_ptr = NULL;
+
 	if(initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME) < 2){
 		printf("Failed to open file %s\n", MHT_DEFAULT_FILE_NAME);
 		exit(0);
 	}
 
-	searchPageByNo(5);
+	mhtblk_ptr = searchPageByNo(5555);
+	printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
+	freeMHTBlock(&mhtblk_ptr);
 	
 	return 0;
 }

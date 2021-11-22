@@ -33,7 +33,6 @@ typedef struct _MHT_BLOCK {
 	char	m_hash[HASH_LEN];
 	uchar 	m_isSupplementaryNode;
 	uchar	m_isZeroNode;
-    uchar   m_isRootNode;
 	int 	m_lChildPageNo;
 	int 	m_lChildOffset;
 	int 	m_rChildPageNo;

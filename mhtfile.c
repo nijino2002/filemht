@@ -341,18 +341,15 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 	memset(childblk_buf, 0, MHT_BLOCK_SIZE);
 	// after reading root node block, the file pointer is at the end of the file.
 	fo_read_mht_block2(g_mhtFileFdRd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
-	printf("%d\n", *((int*)(rootnode_buf + MHT_BLOCK_OFFSET_LEVEL)));
 	// reset the file pointer to the beginning of the root node block
 	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
 	tmpblk_buf = rootnode_buf;
 	while((node_level = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF) {
-		memset(childblk_buf, 0, MHT_BLOCK_SIZE);
 		node_page_no = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO));
 		//printf("pageNo: %d\n", node_page_no);
 		if(page_no <= node_page_no){	// go to left child block
 			fo_read_mht_block(g_mhtFileFdRd, childblk_buf, MHT_BLOCK_SIZE, 
 								*((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LCOS)), SEEK_CUR);
-			printf("LCOS: %d\n", *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LCOS)));
 			// reset the file pointer to the beginning of the current left child node block
 			fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
 			tmpblk_buf = childblk_buf;
@@ -372,8 +369,9 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 	}
 
 	// build a MHT block structure to store the page info.
-	mhtblk_ptr = (PMHT_BLOCK) malloc (MHT_BLOCK_SIZE);
-	printf("Found page: %d\n", *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO)));
+	mhtblk_ptr = makeMHTBlock();
+	unserialize_mht_block(tmpblk_buf, MHT_BLOCK_SIZE, &mhtblk_ptr);
+	// printf("Found page: %d\n", *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO)));
 
 	// free memory
 	free(rootnode_buf);
@@ -418,7 +416,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 20; i++){	// i refers to page number
+	for(i = 0; i < 100000; i++){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
@@ -745,6 +743,32 @@ int serialize_mht_file_header(PMHT_FILE_HEADER pmht_file_header,
 int unserialize_mht_block(char *block_buf, 
 						  uint32 block_buf_len, 
 						  PMHT_BLOCK *pmht_block) {
+	int ret = 0;	// 0 refers to none data has been processed.
+	PMHT_BLOCK tmpblk_ptr = NULL;
+
+	if(!pmht_block || !block_buf || block_buf_len != MHT_BLOCK_SIZE) {
+		check_pointer(pmht_block, "pmht_block");
+		check_pointer(block_buf, "block_buf");
+		debug_print("unserialize_mht_block", "error parameters");
+		return ret;
+	}
+
+	tmpblk_ptr = *pmht_block;
+	tmpblk_ptr->m_pageNo = *((int*)(block_buf + MHT_BLOCK_OFFSET_PAGENO)); ret += sizeof(int);
+	tmpblk_ptr->m_nodeLevel = *((int*)(block_buf + MHT_BLOCK_OFFSET_LEVEL)); ret += sizeof(int);
+	memcpy(tmpblk_ptr->m_hash, block_buf + MHT_BLOCK_OFFSET_HASH, HASH_LEN); ret += HASH_LEN;
+	tmpblk_ptr->m_isSupplementaryNode = *((char*)(block_buf + MHT_BLOCK_OFFSET_ISN)); ret += sizeof(char);
+	tmpblk_ptr->m_isZeroNode = *((char*)(block_buf + MHT_BLOCK_OFFSET_IZN)); ret += sizeof(char);
+	tmpblk_ptr->m_lChildPageNo = *((int*)(block_buf + MHT_BLOCK_OFFSET_LCPN)); ret += sizeof(int);
+	tmpblk_ptr->m_lChildOffset = *((int*)(block_buf + MHT_BLOCK_OFFSET_LCOS)); ret += sizeof(int);
+	tmpblk_ptr->m_rChildPageNo = *((int*)(block_buf + MHT_BLOCK_OFFSET_RCPN)); ret += sizeof(int);
+	tmpblk_ptr->m_rChildOffset = *((int*)(block_buf + MHT_BLOCK_OFFSET_RCOS)); ret += sizeof(int);
+	tmpblk_ptr->m_parentPageNo = *((int*)(block_buf + MHT_BLOCK_OFFSET_PPN)); ret += sizeof(int);
+	tmpblk_ptr->m_parentOffset = *((int*)(block_buf + MHT_BLOCK_OFFSET_POS)); ret += sizeof(int);
+	memcpy(tmpblk_ptr->m_Reserved, block_buf + MHT_BLOCK_OFFSET_RSVD, MHT_BLOCK_RSVD_SIZE); ret += MHT_BLOCK_RSVD_SIZE;
+
+	return ret;
+
 	/*
 	pmht_block->m_pageNo = *((int*)p_buf);
 	p_buf += sizeof(int);
