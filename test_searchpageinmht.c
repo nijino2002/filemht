@@ -11,6 +11,7 @@ extern PQNode g_pQ;
 
 int main(int argc, char const *argv[])
 {
+	int pageNo = UNASSIGNED_PAGENO;
 	PMHT_BLOCK mhtblk_ptr = NULL;
 
 	if(initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME) < 2){
@@ -18,9 +19,16 @@ int main(int argc, char const *argv[])
 		exit(0);
 	}
 
-	mhtblk_ptr = searchPageByNo(5555);
-	printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
-	freeMHTBlock(&mhtblk_ptr);
+	printf("Input page number to be searched: ");
+	scanf("%d", &pageNo);
+	mhtblk_ptr = searchPageByNo(pageNo);
+	if(mhtblk_ptr){
+		printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
+		freeMHTBlock(&mhtblk_ptr);
+	}
+	else{
+		printf("No page found.\n");
+	}
 	
 	return 0;
 }

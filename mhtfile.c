@@ -344,6 +344,7 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 	// reset the file pointer to the beginning of the root node block
 	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
 	tmpblk_buf = rootnode_buf;
+	// binary search algorithm
 	while((node_level = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF) {
 		node_page_no = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO));
 		//printf("pageNo: %d\n", node_page_no);

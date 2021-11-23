@@ -127,6 +127,8 @@ PMHT_FILE_HEADER readMHTFileHeader();
  */
 PMHT_BLOCK searchPageByNo(int page_no);
 
+int updatePageByNo(int page_no, PMHT_BLOCK mhtblk_ptr);
+
 /*----------  Helper Functions  ---------------*/
 
 /*
@@ -240,8 +242,24 @@ int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_bloc
  */
 int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
 
+/**
+ * @brief      Returning the memory address of the given section in MHT block buffer.
+ *
+ * @param      mht_blk_buffer      The pointer to MHT block buffer
+ * @param[in]  mht_blk_buffer_len  MHT block buffer length
+ * @param[in]  offset              The offset of the given section. (refering to defs.h: MHT_BLOCK_OFFSET_xxxx)
+ *
+ * @return     The section address in MHT block buffer.
+ */
 void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
 
+/**
+ * @brief      Determines whether the specified offset is valid offset in MHT block buffer.
+ *
+ * @param[in]  offset  The given offset in MHT block buffer.
+ *
+ * @return     True if the specified offset is valid offset in MHT block buffer, False otherwise.
+ */
 bool is_valid_offset_in_mht_block_buffer(uint32 offset);
 
 /**
