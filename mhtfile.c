@@ -310,8 +310,94 @@ PMHT_FILE_HEADER readMHTFileHeader() {
 	return mht_file_header_ptr;
 }
 
-PMHT_BLOCK searchPageByNo(int page_no) {
+int locateMHTBlockOffsetByPageNo(int page_no) {
 	PMHT_BLOCK mhtblk_ptr = NULL;	// MHT block preserving the found page
+	uchar *rootnode_buf = NULL;		// root node block buffer
+	uchar *tmpblk_buf = NULL;	// temporarily storing MHT block buffer
+	uchar *childblk_buf = NULL;
+	PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
+	bool	bPageBlockFound = FALSE;
+	uint32	node_level = NODELEVEL_LEAF;
+	uint32	node_page_no = UNASSIGNED_PAGENO;		// temporarily preserving MHT block's page number
+	int ret_offset = -1;
+
+	if(g_mhtFileFdRd < 3){
+		debug_print("locateMHTBlockOffsetByPageNo", "Invalid file descriptor");
+		return -1;
+	}
+
+	if(page_no < 0) {
+		debug_print("locateMHTBlockOffsetByPageNo", "Invalid page number");
+		return -1;
+	}
+
+	if(!(mhtfilehdr_ptr = readMHTFileHeader())){
+		debug_print("locateMHTBlockOffsetByPageNo", "Failed to read MHT file header");
+		return -1;
+	}
+
+	rootnode_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+	childblk_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+	memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
+	memset(childblk_buf, 0, MHT_BLOCK_SIZE);
+	// after reading root node block, the file pointer is at the end of the file.
+	fo_read_mht_block2(g_mhtFileFdRd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
+	// reset the file pointer to the beginning of the root node block
+	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+	tmpblk_buf = rootnode_buf;
+	// binary search algorithm
+	while((node_level = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF) {
+		node_page_no = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO));
+		//printf("pageNo: %d\n", node_page_no);
+		if(page_no <= node_page_no){	// go to left child block
+			fo_read_mht_block(g_mhtFileFdRd, childblk_buf, MHT_BLOCK_SIZE, 
+								*((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LCOS)), SEEK_CUR);
+		}
+		else{	// go to right child block
+			fo_read_mht_block(g_mhtFileFdRd, childblk_buf, MHT_BLOCK_SIZE, 
+								*((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_RCOS)), SEEK_CUR);
+		}
+		// reset the file pointer to the beginning of the current left child node block
+		ret_offset = fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+		tmpblk_buf = childblk_buf;
+	} // while
+
+	// Now, tmpblk_buf stores the final leaf node block
+	if(page_no != *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO))) {
+		debug_print("locateMHTBlockOffsetByPageNo", "No page found");
+		return -1;	// search failed
+	}
+
+	// free memory
+	free(rootnode_buf);
+	free(childblk_buf);
+	free(mhtfilehdr_ptr);
+
+	return ret_offset;
+}
+
+PMHT_BLOCK searchPageByNo(int page_no) {
+	PMHT_BLOCK mhtblk_ptr = NULL;
+	uchar *block_buf = NULL;
+
+	if(locateMHTBlockOffsetByPageNo(page_no) <= 0){
+		debug_print("searchPageByNo", "No page found");
+		return NULL;
+	}
+
+	// Page block found and the file pointer is at the beginning of the block
+	// read block buffer
+	block_buf = (uchar*) malloc (MHT_BLOCK_SIZE);
+	memset(block_buf, 0, MHT_BLOCK_SIZE);
+	fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+
+	// build a MHT block structure to store the page info.
+	mhtblk_ptr = makeMHTBlock();
+	unserialize_mht_block(block_buf, MHT_BLOCK_SIZE, &mhtblk_ptr);
+
+	return mhtblk_ptr;
+	
+	/*PMHT_BLOCK mhtblk_ptr = NULL;	// MHT block preserving the found page
 	uchar *rootnode_buf = NULL;		// root node block buffer
 	uchar *tmpblk_buf = NULL;	// temporarily storing MHT block buffer
 	uchar *childblk_buf = NULL;
@@ -380,6 +466,43 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 	free(mhtfilehdr_ptr);
 
 	return mhtblk_ptr;
+	*/
+}
+
+int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len) {
+	uchar *block_buf = NULL;
+	int offset = -1;
+
+	if(page_no < 0) {
+		debug_print("updateMHTBlockHashByPageNo", "Invalid page number");
+		return -1;
+	}
+
+	if(!hash_val || hash_val_len != HASH_LEN){
+		debug_print("updateMHTBlockHashByPageNo", "Invalid hash_val or hash_val_len");
+		return -1;
+	}
+
+	if(locateMHTBlockOffsetByPageNo(page_no) <= 0){
+		debug_print("updateMHTBlockHashByPageNo", "No page found");
+		return -2;
+	}
+
+	// Page block found and the file pointer is at the beginning of the block
+	// read block content
+	block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+	memset(block_buf, 0, MHT_BLOCK_SIZE);
+	fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	// replace hash value with new value
+	memcpy(block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
+	// reset file pointer to the beginning of the block and write the new block to the file
+	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+	// update successfully
+	fo_update_mht_block(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	// reset file pointer to the beginning of the block for return value
+	offset = fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+
+	return offset;
 }
 
 /*----------  Helper Functions  ---------------*/

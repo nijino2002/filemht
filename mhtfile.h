@@ -127,7 +127,9 @@ PMHT_FILE_HEADER readMHTFileHeader();
  */
 PMHT_BLOCK searchPageByNo(int page_no);
 
-int updatePageByNo(int page_no, PMHT_BLOCK mhtblk_ptr);
+int locateMHTBlockOffsetByPageNo(int page_no);
+
+int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len);
 
 /*----------  Helper Functions  ---------------*/
 

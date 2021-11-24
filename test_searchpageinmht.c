@@ -29,6 +29,8 @@ int main(int argc, char const *argv[])
 	else{
 		printf("No page found.\n");
 	}
+
+	fo_close_mhtfile(g_mhtFileFdRd);
 	
 	return 0;
 }
