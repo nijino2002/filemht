@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define HASH_LEN	32
+#define HASH_STR_LEN    70
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
 #define RESERVED_CHAR	'R'
 #define MHT_HEADER_LEN	128

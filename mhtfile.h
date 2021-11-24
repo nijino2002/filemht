@@ -293,6 +293,12 @@ ssize_t fo_read_mht_block2(int fd,
                             int offset,         // number of bytes from whence
                             int whence);
 
+ssize_t fo_read_mht_file(int fd, 
+                            uchar *buffer, 
+                            uint32 buffer_len, 
+                            int offset,         // number of bytes from whence
+                            int whence);
+
 
 ssize_t fo_update_mht_block(int fd, 
 							uchar *buffer, 

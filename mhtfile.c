@@ -1152,6 +1152,31 @@ ssize_t fo_read_mht_block2(int fd,
 	return bytes_read;
 }
 
+ssize_t fo_read_mht_file(int fd, 
+                            uchar *buffer, 
+                            uint32 buffer_len, 
+                            int offset,         // number of bytes from whence
+                            int whence){
+	ssize_t bytes_read = -1;
+
+	if(fd < 0){
+		debug_print("fo_read_mht_file", "Invalid fd");
+		return bytes_read;
+	}
+
+	if(!buffer || buffer_len <= 0){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_read_mht_file", "Error parameters");
+		return bytes_read;
+	}
+
+	/* Moving file pointer to the position: whence + offset */
+	fo_locate_mht_pos(fd, offset, whence);
+	bytes_read = read(fd, buffer, buffer_len);
+
+	return bytes_read;
+}
+
 ssize_t fo_update_mht_block(int fd, 
 							uchar *buffer, 
 							uint32 buffer_len, 

@@ -168,7 +168,7 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, WORD out_string_len) {
 	}
 
 	if(out_string_len < SHA256_BLOCK_SIZE * 2 + 1){
-		printf("Parameter \"out_string_len\" must be larger than 65 bytes.\n");
+		printf("Error from convert_hash_to_string: parameter \"out_string_len\" must be larger than 65 bytes.\n");
 		return;
 	}
 
