@@ -127,8 +127,26 @@ PMHT_FILE_HEADER readMHTFileHeader();
  */
 PMHT_BLOCK searchPageByNo(int page_no);
 
+/**
+ * @brief      Locates an MHT block offset by page number.
+ *
+ * @param[in]  page_no  The given page number
+ *
+ * @return     If success, the offset of the block corresponding to the given page number is returned,
+ *             otherwise, values <= 0 will be returned.
+ */
 int locateMHTBlockOffsetByPageNo(int page_no);
 
+/**
+ * @brief      Update the hash value of an MHT block corresponding to the given page number.
+ *
+ * @param[in]  page_no       The given page number
+ * @param      hash_val      The new hash value
+ * @param[in]  hash_val_len  The new hash value length
+ *
+ * @return     If success, the offset of the block that hash been updated is returned, 
+ *             otherwise, values <= 0 will be returned.
+ */
 int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len);
 
 /*----------  Helper Functions  ---------------*/

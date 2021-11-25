@@ -46,6 +46,15 @@ This is a description on the design of file-based MHT structure.
 11) Parent Offset (POS): 4 bytes, the offset of the parent node in MHT file
 12) Reserved region (RSVD): 4 bytes.
 
-4. Supplement of some sections of FH and CNB:
+4. Supplement of some sections of FH and MHT block:
 1) NL is used to hold node level, which can be also used to determine node type. NL = 0 refers to leaf node, NL > 0 refers interior node, and root node has the maximal NL.
 2) PN not only holds page number but also is used as the value when locating leaf node by using binary search in file-based MHT.
+
+4. About supplementary blocks (nodes) (ISN section)
+
+-------------------------------------------------------------------------------------------------------------
+|  FH  |  
+|
+----
+
+FH: File header
