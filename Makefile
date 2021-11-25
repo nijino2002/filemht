@@ -23,5 +23,5 @@ $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h sha256.h
 
 .PHONY : clean
 clean : 
-	rm -rf main test_searchpageinmht test_updatehashinmht test_fileio sha256_test \
+	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test \
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o $(OBJ)
