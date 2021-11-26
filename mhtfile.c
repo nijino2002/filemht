@@ -546,7 +546,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 10; i++){	// i refers to page number
+	for(i = 0; i < 256; i++){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
