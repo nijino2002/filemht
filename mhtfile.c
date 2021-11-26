@@ -226,6 +226,8 @@ void buildMHTFile(){
 		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+		// set the first byte of the root buffer to 0x01, which means this buffer stores root node
+		(mhtblk_buffer + MHT_BLOCK_OFFSET_RSVD)[0] = 0x01;
 		if(g_mhtFileFD > 0) {
 			g_mhtFileRootNodeOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);	//temporarily storing root node offset in MHT file
 			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);	// write root block to MHT file
@@ -503,6 +505,10 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 	offset = fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
 
 	return offset;
+}
+
+int insertNewMHTBlock(PMHT_BLOCK pmht_block) {
+	return 0;
 }
 
 /*----------  Helper Functions  ---------------*/
@@ -999,6 +1005,49 @@ bool is_valid_offset_in_mht_block_buffer(uint32 offset){
 	}
 
 	return FALSE;
+}
+
+int find_the_first_leaf_splymt_block_by_offset(int fd, int offset) {
+	uchar node_type = 'R';
+	int reserved_val = 'RRRR';
+	uchar reserved_buffer[MHT_BLOCK_RSVD_SIZE] = {0};
+	uchar *mht_buf_ptr = NULL;
+
+	if(fd < 3) {
+		debug_print("find_the_first_leaf_splymt_block_by_offset", "Invalid file descriptor fd");
+		return -1;
+	}
+
+	if(offset < 0) {
+		debug_print("find_the_first_leaf_splymt_block_by_offset", "offset must >= 0");
+		return -1;
+	}
+
+	// force the file pointer to offset
+	fo_locate_mht_pos(fd, offset, SEEK_SET);
+	// offset must be the beginning of an MHT block
+	fo_read_mht_file(fd, reserved_buffer, MHT_BLOCK_RSVD_SIZE, -MHT_BLOCK_RSVD_SIZE, SEEK_CUR);
+	if(reserved_val != *((int*)reserved_buffer)) {
+		debug_print("find_the_first_leaf_splymt_block_by_offset", "offset must be the beginning of an MHT block");
+		return -1;
+	}
+	// now, the file pointer is still at the given offset
+	// read MHT block
+	mht_buf_ptr = (uchar*) malloc(MHT_BLOCK_SIZE);
+	memset(mht_buf_ptr, 0, MHT_BLOCK_SIZE);
+	fo_read_mht_block(fd, mht_buf_ptr, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	// check whether reaching at the root block
+	while((mht_buf_ptr + MHT_BLOCK_OFFSET_RSVD)[0] != 0x01) {
+		// proper block is found
+		if(*((int*)(mht_buf_ptr + MHT_BLOCK_OFFSET_LEVEL)) == NODELEVEL_LEAF && 
+			*(mht_buf_ptr + MHT_BLOCK_OFFSET_ISN) == TRUE) {
+			return fo_locate_mht_pos(fd, 0, SEEK_CUR) - MHT_BLOCK_SIZE;
+		}
+		memset(mht_buf_ptr, 0, MHT_BLOCK_SIZE);
+		fo_read_mht_block(fd, mht_buf_ptr, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	}
+
+	return -1;	// no proper block is found
 }
 
 void print_qnode_info(PQNode qnode_ptr){

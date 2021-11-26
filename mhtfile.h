@@ -298,6 +298,16 @@ void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk
 bool is_valid_offset_in_mht_block_buffer(uint32 offset);
 
 /**
+ * Find the first leaf supplementary block from given offset
+ * @Author   DiLu
+ * @DateTime 2021-11-26T13:07:33+0800
+ * @param    fd                       The file descriptor
+ * @param    offset                   The given offset
+ * @return                            The offset of the first leaf supplementary block, otherwise, -1 will be returned.
+ */
+int find_the_first_leaf_splymt_block_by_offset(int fd, int offset);
+
+/**
  * Printing a QNode structure for debugging.
  * @Author   DiLu
  * @DateTime 2021-11-10T14:19:35+0800
