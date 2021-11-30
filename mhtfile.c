@@ -220,7 +220,7 @@ void buildMHTFile(){
 	/* g_pQHeader->m_length > 1 indicates that there are at least 1 floating leaf node in the queue, 
 	   thus, supplementary nodes must be added to construct a complete binary tree. If g_pQHeader->m_length = 1,
 	   that means only the top root node remains in the queue. In other words, the number of leaf nodes (N_l) 
-	   satifies that log_2(N_l) is integer.
+	   satifies that log_2(N_l) is an integer.
 	*/
 	if(g_pQHeader->m_length > 1)
 		deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
