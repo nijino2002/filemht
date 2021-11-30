@@ -217,7 +217,13 @@ void buildMHTFile(){
 	mht_file_header_ptr = makeMHTFileHeader();
 	
 	process_all_pages(&g_pQHeader, &g_pQ);
-	deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
+	/* g_pQHeader->m_length > 1 indicates that there are at least 1 floating leaf node in the queue, 
+	   thus, supplementary nodes must be added to construct a complete binary tree. If g_pQHeader->m_length = 1,
+	   that means only the top root node remains in the queue. In other words, the number of leaf nodes (N_l) 
+	   satifies that log_2(N_l) is integer.
+	*/
+	if(g_pQHeader->m_length > 1)
+		deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
 
 	//dequeue remaining nodes (actually, only root node remains)
 	while(popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ)){
@@ -546,7 +552,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 256; i++){	// i refers to page number
+	for(i = 0; i < 32; i++){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
