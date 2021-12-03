@@ -527,7 +527,7 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 	memset(new_hash, 0, HASH_LEN);
 
 	printf("update_offset:%d\n", update_blobk_offset);
-	while((parent_offset = *((int*)(block_buf + MHT_BLOCK_OFFSET_POS))) != 0)
+	while((block_buf+MHT_BLOCK_OFFSET_RSVD)[0] != 0x01 && (parent_offset = *((int*)(block_buf+MHT_BLOCK_OFFSET_POS))) !=0)
 	{
 		//1.读取父节点信息
 		temp_blobk_offset = update_blobk_offset + parent_offset * MHT_BLOCK_SIZE;
