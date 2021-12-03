@@ -380,7 +380,6 @@ int locateMHTBlockOffsetByPageNo(int page_no) {
 	free(rootnode_buf);
 	free(childblk_buf);
 	free(mhtfilehdr_ptr);
-
 	return ret_offset;
 }
 
@@ -479,6 +478,9 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 
 int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len) {
 	uchar *block_buf = NULL;
+	//需要更新的MHT_block的偏移量
+	int update_blobk_offset = 0;
+
 	int offset = -1;
 
 	if(page_no < 0) {
@@ -491,26 +493,64 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 		return -1;
 	}
 
-	if(locateMHTBlockOffsetByPageNo(page_no) <= 0){
+	if((update_blobk_offset = locateMHTBlockOffsetByPageNo(page_no)) <= 0){
 		debug_print("updateMHTBlockHashByPageNo", "No page found");
 		return -2;
 	}
 
-	// Page block found and the file pointer is at the beginning of the block
-	// read block content
+	//更新指定页码的MHT_block块
+	//读取MHT_block内容（使用绝对偏移量）
 	block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(block_buf, 0, MHT_BLOCK_SIZE);
-	fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
-	// replace hash value with new value
-	memcpy(block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
-	// reset file pointer to the beginning of the block and write the new block to the file
-	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
-	// update successfully
-	fo_update_mht_block(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
-	// reset file pointer to the beginning of the block for return value
-	offset = fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+	fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, update_blobk_offset, SEEK_SET);
 
-	return offset;
+	//将更新后的哈希值写入文件中
+	//1.替换旧哈希值
+	memcpy(block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
+	//2.将文件读写光标重新定位到更新块的开头
+	fo_locate_mht_pos(g_mhtFileFdRd, update_blobk_offset, SEEK_SET);
+	//3.写入文件
+	fo_update_mht_block(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+
+	//更新整条验证路径
+	//记录节点对应偏移量
+	int parent_offset = 0;
+	//临时存放MHT节点信息
+	uchar *temp_block_buf = NULL;
+	//存放计算后的新哈希值
+	uchar *new_hash = NULL;
+
+
+	int temp_blobk_offset = 0;
+	temp_block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+	new_hash = (uchar*) malloc(HASH_LEN);
+	memset(new_hash, 0, HASH_LEN);
+
+	printf("update_offset:%d\n", update_blobk_offset);
+	while((parent_offset = *((int*)(block_buf + MHT_BLOCK_OFFSET_POS))) != 0)
+	{
+		//1.读取父节点信息
+		temp_blobk_offset = update_blobk_offset + parent_offset * MHT_BLOCK_SIZE;
+		printf("temp_blobk_offset:%d\n", temp_blobk_offset);
+		memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
+		fo_read_mht_block2(g_mhtFileFdRd, temp_block_buf, MHT_BLOCK_SIZE, temp_blobk_offset, SEEK_SET);
+
+		//2.更新其哈希值并写入文件
+		cal_parent_nodes_sha256(temp_block_buf, temp_blobk_offset);
+		fo_update_mht_block2(g_mhtFileFdRd, temp_block_buf, MHT_BLOCK_SIZE, temp_blobk_offset, SEEK_SET);
+
+		//3.更新MHT块相关信息
+		memset(block_buf, 0, MHT_BLOCK_SIZE);
+		memcpy(block_buf, temp_block_buf, MHT_BLOCK_SIZE);
+		update_blobk_offset = temp_blobk_offset;
+		//fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, update_blobk_offset, SEEK_SET);
+		//printf("update_offset:%d\n", update_blobk_offset);
+	}
+
+	free(block_buf);
+	free(temp_block_buf);
+	free(new_hash);
+	return 0;
 }
 
 int insertNewMHTBlock(PMHT_BLOCK pmht_block) {
@@ -552,7 +592,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 32; i++){	// i refers to page number
+	for(i = 0; i < 16; i++){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
@@ -1076,6 +1116,45 @@ void print_qnode_info(PQNode qnode_ptr){
 	return;
 }
 
+void cal_parent_nodes_sha256(uchar *parent_block_buf, int offset)
+{
+	//存放左右孩子对应信息
+	int lchild_offset = 0;
+	int rchild_offset = 0;
+	uchar *lhash = NULL;
+	uchar *rhash = NULL;
+	//存放计算得到的新哈希值
+	uchar *new_hash = NULL;
+
+	//获取对应信息
+	check_pointer((void*)parent_block_buf, "update_parent_block_buf");
+	lchild_offset = *((int*)(parent_block_buf + MHT_BLOCK_OFFSET_LCOS));
+	rchild_offset = *((int*)(parent_block_buf + MHT_BLOCK_OFFSET_RCOS));
+
+	lhash = (uchar*) malloc(HASH_LEN);
+	rhash = (uchar*) malloc(HASH_LEN);
+	memset(lhash, 0, HASH_LEN);
+	memset(rhash, 0, HASH_LEN);
+	fo_read_mht_file(g_mhtFileFdRd, lhash, HASH_LEN, lchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
+	fo_read_mht_file(g_mhtFileFdRd, rhash, HASH_LEN, rchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
+
+	//计算新的哈希值并替换
+	new_hash = (uchar*) malloc(HASH_LEN);
+	memset(new_hash, 0, HASH_LEN);
+	generateCombinedHash_SHA256(lhash, rhash, new_hash, HASH_LEN);
+	memcpy(parent_block_buf + MHT_BLOCK_OFFSET_HASH, new_hash, HASH_LEN);
+	//测试输出新得到的哈希值
+	uchar hash_string[HASH_STR_LEN];
+	memset(hash_string, 0, HASH_STR_LEN);
+	convert_hash_to_string(parent_block_buf + MHT_BLOCK_OFFSET_HASH, hash_string, HASH_STR_LEN);
+	printf("The cal hash value: %s\n", hash_string);
+
+	free(lhash);
+	free(rhash);
+	free(new_hash);	
+}
+
+
 /*----------  File Operation Functions  ------------*/
 
 int fo_create_mhtfile(const char *pathname){
@@ -1256,6 +1335,32 @@ ssize_t fo_update_mht_block(int fd,
 
 	return bytes_write;
 }
+
+ssize_t fo_update_mht_block2(int fd, 
+                             uchar *buffer, 
+                             uint32 buffer_len, 
+                             int offset,         
+                             int whence){
+	ssize_t bytes_write = -1;
+
+	if(fd < 0){
+		debug_print("fo_update_mht_block", "Invalid fd");
+		return bytes_write;
+	}
+
+	if(!buffer || buffer_len != MHT_BLOCK_SIZE){
+		check_pointer(buffer, "buffer");
+		debug_print("fo_update_mht_block2", "Error parameters");
+		return bytes_write;
+	}
+
+	fo_locate_mht_pos(fd, offset, whence);
+	bytes_write = write(fd, buffer, buffer_len);
+
+	return bytes_write;
+}
+
+
 
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
 	if(fd < 0){
