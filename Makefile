@@ -1,7 +1,7 @@
 CC = gcc
 OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o sha256.o
 
-all : main test_searchpageinmht test_updatehashinmht test_fileio sha256_test
+all : main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile
 .PHONY : all
 
 main : main.o $(OBJ)
@@ -19,9 +19,12 @@ test_fileio: test_fileio.o $(OBJ)
 sha256_test: sha256_test.o $(OBJ)
 	$(CC) -o sha256_test sha256_test.o $(OBJ)
 
+test_mhtfile: test_mhtfile.o
+	$(CC) -o test_mhtfile test_mhtfile.o $(OBJ)
+
 $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h sha256.h
 
 .PHONY : clean
 clean : 
-	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test \
-	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o $(OBJ)
+	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile \
+	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o $(OBJ)
