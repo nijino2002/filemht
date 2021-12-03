@@ -41,20 +41,20 @@ int main(int argc, char const *argv[])
 	new_hash = (uchar*) malloc(HASH_LEN);
 	memset(new_hash, 0, HASH_LEN);
 	sha256_init(&ctx);
-	sha256_update(&ctx, "MYHASH", strlen("MYHASH"));
+	sha256_update(&ctx, "MYHASH1", strlen("MYHASH1"));
 	sha256_final(&ctx, new_hash);
 	block_offset = updateMHTBlockHashByPageNo(pageNo, new_hash, HASH_LEN);
-	if(block_offset <=0) {
+	if(block_offset < 0) {
 		printf("Update failed.\n");
 		fo_close_mhtfile(g_mhtFileFdRd);
 		exit(0);
 	}
-	memset(new_hash, 0, HASH_LEN);
+	//memset(new_hash, 0, HASH_LEN);
 	// read the new hash value from MHT file
-	fo_read_mht_file(g_mhtFileFdRd, new_hash, HASH_LEN, block_offset + MHT_BLOCK_OFFSET_HASH, SEEK_SET);
-	memset(hash_string, 0, HASH_STR_LEN);
-	convert_hash_to_string(new_hash, hash_string, HASH_STR_LEN);
-	printf("The new hash value: %s\n", hash_string);
+	//fo_read_mht_file(g_mhtFileFdRd, new_hash, HASH_LEN, block_offset + MHT_BLOCK_OFFSET_HASH, SEEK_SET);
+	//memset(hash_string, 0, HASH_STR_LEN);
+	//convert_hash_to_string(new_hash, hash_string, HASH_STR_LEN);
+	//printf("The new hash value: %s\n", hash_string);
 
 	free(new_hash);
 	fo_close_mhtfile(g_mhtFileFdRd);
