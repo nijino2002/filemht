@@ -10,9 +10,12 @@ PMHTNode makeMHTNode(int pageno, const char d[]){
 		return NULL;
 	node_ptr->m_pageNo = pageno;
 	memcpy(node_ptr->m_hash, d, HASH_LEN);	// HASH_LEN == SHA256_BLOCK_SIZE == 32
-	node_ptr->m_lchildOffset = node_ptr->m_lchildPageNo = UNASSIGNED_PAGENO;
-	node_ptr->m_rchildOffset = node_ptr->m_rchildPageNo = UNASSIGNED_PAGENO;
-	node_ptr->m_parentOffset = node_ptr->m_parentPageNo = UNASSIGNED_PAGENO;
+
+	node_ptr->m_lchildPageNo = node_ptr->m_rchildPageNo = node_ptr->m_parentPageNo = UNASSIGNED_PAGENO;
+	node_ptr->m_lchildOffset = node_ptr->m_rchildOffset = node_ptr->m_parentOffset = UNASSIGNED_OFFSET;
+	//node_ptr->m_lchildOffset = node_ptr->m_lchildPageNo = UNASSIGNED_PAGENO;
+	//node_ptr->m_rchildOffset = node_ptr->m_rchildPageNo = UNASSIGNED_PAGENO;
+	//node_ptr->m_parentOffset = node_ptr->m_parentPageNo = UNASSIGNED_PAGENO;
 
 	return node_ptr;
 }

@@ -315,6 +315,15 @@ int find_the_first_leaf_splymt_block_by_offset(int fd, int offset);
  */
 void print_qnode_info(PQNode qnode_ptr);
 
+
+/*
+计算父节点哈希值
+Parameters:
+	parent_block_buf: 初始父节点块信息.
+	offset: the 父节点对应的绝对偏移量
+*/
+void cal_parent_nodes_sha256(uchar *parent_block_buf, int offset);
+
 /*----------  File Operation Functions  ------------*/
 int fo_create_mhtfile(const char *pathname);
 
@@ -349,8 +358,15 @@ ssize_t fo_update_mht_block(int fd,
 							int rel_distance, 
 							int whence);
 
+ssize_t fo_update_mht_block2(int fd, 
+                            uchar *buffer, 
+                            uint32 buffer_len, 
+                            int offset,         // number of bytes from whence
+                            int whence);
+
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
 
 int fo_close_mhtfile(int fd);
+
 
 #endif
