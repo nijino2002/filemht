@@ -27,7 +27,7 @@
 #define MHT_BLOCK_OFFSET_RSVD		(MHT_BLOCK_OFFSET_POS + sizeof(int))
 #define MHT_BLOCK_ATRRIB_NUM		12
 #define UNASSIGNED_OFFSET   0
-#define UNASSIGNED_PAGENO	-1
+#define UNASSIGNED_PAGENO	0x7fffffff
 #define SINGLENODECMB_PAGENO	-2
 #define NODELEVEL_LEAF		0
 #define MHT_FILE_MAGIC_STRING       "mhtfile_v1.0"

@@ -498,6 +498,7 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 		return -2;
 	}
 
+	offset = update_blobk_offset;
 	//更新指定页码的MHT_block块
 	//读取MHT_block内容（使用绝对偏移量）
 	block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
@@ -547,10 +548,12 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 		//printf("update_offset:%d\n", update_blobk_offset);
 	}
 
+	//将文件读写光标重新定位到更新页码块的开头
+	offset = fo_locate_mht_pos(g_mhtFileFdRd, offset, SEEK_SET);
 	free(block_buf);
 	free(temp_block_buf);
 	free(new_hash);
-	return 0;
+	return offset;
 }
 
 int insertNewMHTBlock(PMHT_BLOCK pmht_block) {
