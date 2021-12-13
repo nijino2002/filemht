@@ -17,8 +17,9 @@ int main(int argc, char const *argv[])
 	PMHT_BLOCK mhtblk_ptr = NULL;
 	SHA256_CTX ctx;
 	int block_offset = -1;
+	int fd = 0;
 
-	if(initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME) < 2){
+	if((fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME)) < 2){
 		printf("Failed to open file %s\n", MHT_DEFAULT_FILE_NAME);
 		exit(0);
 	}
@@ -43,7 +44,7 @@ int main(int argc, char const *argv[])
 	sha256_init(&ctx);
 	sha256_update(&ctx, "MYHASH1", strlen("MYHASH1"));
 	sha256_final(&ctx, new_hash);
-	block_offset = updateMHTBlockHashByPageNo(pageNo, new_hash, HASH_LEN);
+	block_offset = updateMHTBlockHashByPageNo(pageNo, new_hash, HASH_LEN, fd);
 	if(block_offset <= 0) {
 		printf("Update failed.\n");
 		fo_close_mhtfile(g_mhtFileFdRd);

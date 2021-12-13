@@ -43,7 +43,7 @@ void test_build_mhtfile(){
 	//如何初始化构造为2的n次，则不需要进行填充，此时队列剩余的就是root节点
 	if(g_pQHeader->m_level > 1)
 	{
-		deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ);
+		deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, g_mhtFileFD);
 	}
 	
 	//printf("\n\n\n g_pQHeader->next->m_level:%d g_pQ->m_level:%d", g_pQHeader->next->m_level, g_pQ->m_level);
