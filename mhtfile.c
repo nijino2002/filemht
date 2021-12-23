@@ -558,6 +558,7 @@ PMHT_BLOCK searchPageByNo(int page_no) {
 int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len, int fd) {
 	uchar *block_buf = NULL;
 	//需要更新的MHT_block的偏移量
+	//The offset of the MHT_block that needs to be updated
 	int update_blobk_offset = 0;
 
 	int update_res = -1;
@@ -578,21 +579,29 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 	}
 
 	//更新指定页码的MHT_block块
+	//Update the MHT_block block of the specified page number
 	//读取MHT_block内容（使用绝对偏移量）
+	//Read MHT_block content (using absolute offset)
 	block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(block_buf, 0, MHT_BLOCK_SIZE);
 	fo_read_mht_block2(fd, block_buf, MHT_BLOCK_SIZE, update_blobk_offset, SEEK_SET);
 
 	//将更新后的哈希值写入文件中
+	//Write the updated hash value to the file
 	//1.替换旧哈希值
+	//1. Replace the old hash value
 	memcpy(block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
 	//2.将文件读写光标重新定位到更新块的开头
+	//2. Reposition the file read and write cursor to the beginning of the update block
 	fo_locate_mht_pos(fd, update_blobk_offset, SEEK_SET);
 	//3.写入文件
+	//3. Write to file
 	fo_update_mht_block(fd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 	//4.更新验证路径
+	//4. Update verification path
 	update_res = updatePathToRoot(block_buf, update_blobk_offset, fd);
 	//5.将文件读写光标重新定位到更新块的开头
+	//5. Reposition the file read and write cursor to the beginning of the update block
 	update_blobk_offset = fo_locate_mht_pos(fd, update_blobk_offset, SEEK_SET);
 
 	free(block_buf);
@@ -601,11 +610,15 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 
 int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd){
 	//更新整条验证路径
+	//Update the entire verification path
 	//记录节点对应偏移量
+	//Record the corresponding offset of the node
 	int parent_offset = 0;
 	//临时存放MHT节点信息
+	// Temporarily store MHT node information
 	uchar *temp_block_buf = NULL;
 	//存放计算后的新哈希值
+	//Store the new hash value after calculation
 	uchar *new_hash = NULL;
 
 	if(!update_block_buf || update_blobk_offset <= 0){
@@ -624,12 +637,14 @@ int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd){
 	while((temp_block_buf+MHT_BLOCK_OFFSET_RSVD)[0] != 0x01 && (parent_offset = *((int*)(temp_block_buf+MHT_BLOCK_OFFSET_POS))) !=0)
 	{
 		//1.读取父节点信息
+		//1. Read parent node information
 		temp_blobk_offset = temp_blobk_offset + parent_offset * MHT_BLOCK_SIZE;
 		//printf("temp_blobk_offset:%d\n", temp_blobk_offset);
 		memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
 		fo_read_mht_block2(fd, temp_block_buf, MHT_BLOCK_SIZE, temp_blobk_offset, SEEK_SET);
 
 		//2.更新其哈希值并写入文件
+		//2. Update its hash value and write to the file
 		cal_parent_nodes_sha256(fd, temp_block_buf, temp_blobk_offset);
 		fo_update_mht_block2(fd, temp_block_buf, MHT_BLOCK_SIZE, temp_blobk_offset, SEEK_SET);
 	}
@@ -648,12 +663,14 @@ int updateMHTBlockHashByMHTBlock(uchar *mhtblk_buffer, int blobk_offset, int fd)
 	}
 
 	//将更新信息块写入文件
+	//Write the update information block to the file
 	if( fo_update_mht_block2(fd, mhtblk_buffer, MHT_BLOCK_SIZE, blobk_offset, SEEK_SET) <= 0)
 	{
 		return -1;
 	}
 
 	//更新验证路径
+	//Update verification path
 	updatePathToRoot(mhtblk_buffer, blobk_offset, fd);
 
     return 0;
@@ -663,15 +680,19 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
     
     int update_blobk_offset = 0;
     //填充节点的偏移量
+	//Fill the offset of the node
     int supplementaryNode_offset = 0;
 	uchar *mhtblk_buffer = NULL;
     //文件头信息
+	//File header information
     PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
 	//存放根结点信息
+	//Store root node information
 	uchar *rootnode_buf = NULL;
     PQNode qnode_ptr = NULL;
 
 	//1.判断指针是否为空，防止出错
+	//1. Determine whether the pointer is empty to prevent errors
     if(!pmht_block)
     {
         debug_print("insertNewMHTBlock", "Invalid pmht_block");
@@ -679,7 +700,9 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
     }
 
     //2.查找是否有可以填充的节点
-	//2.1通过MHT文件头信息获取填充节点的offset        
+	//2. Find out if there are nodes that can be filled
+	//2.1通过MHT文件头信息获取填充节点的offset 
+	//2.1 Obtain the offset of the filling node through the MHT file header information       
 	if(fd < 3)
     {
 		debug_print("insertNewMHTBlock", "Invalid file descriptor");
@@ -696,17 +719,21 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 
 	g_mhtFileRootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
     //2.2没有可以进行填充的节点，需要添加新的补全节点;否则进行下一步更新操作
+	//2.2 There is no node that can be filled, and a new completion node needs to be added; otherwise, proceed to the next update operation
     if(supplementaryNode_offset == 0)
     {
 		PQNode popped_qnode_ptr = NULL;
 		//构造补充节点写入文件
+		//Construct supplementary node to write file
 		//a.读取当前根结点信息
+		//a. Read the current root node information
 		rootnode_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
 		memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
 		printf("rootNodeOffset: %d\n", mhtfilehdr_ptr->m_rootNodeOffset);
 		fo_read_mht_block2(fd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
 
 		//b.将根结点入队，进行二叉树补全
+		//b. Put the root node into the team and perform binary tree completion
 		initQueue(&g_pQHeader, &g_pQ);
 		qnode_ptr = mht_buffer_to_qnode(rootnode_buf, mhtfilehdr_ptr->m_rootNodeOffset);
 		if(!qnode_ptr)
@@ -715,6 +742,7 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		}
 		enqueue(&g_pQHeader, &g_pQ, qnode_ptr);
 		//将光标定位到原来根结点的位置进行写入
+		//Position the cursor to the position of the original root node for writing
 		fo_locate_mht_pos(fd, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
         deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, fd);
 		if(g_pQHeader->m_length > 1)
@@ -723,13 +751,16 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		}
 
 		//将新生成的根结点写入文件
+		//Write the newly generated root node into the file
 		popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ);
 		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
 		//由队列节点创建根结点
+		//Create the root node by the queue node
 		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 		//设置根结点的保留区域，可与其他节点区别
+		//Set the reserved area of the root node, which can be distinguished from other nodes
 		(mhtblk_buffer + MHT_BLOCK_OFFSET_RSVD)[0] = 0x01;
 		g_mhtFileRootNodeOffset = fo_locate_mht_pos(fd, 0, SEEK_CUR);
 		printf("g_mhtFileRootNodeOffset:%d\n",g_mhtFileRootNodeOffset);
@@ -740,12 +771,15 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		deleteQNode(&popped_qnode_ptr);
 
 		//更新补充节点偏移量
+		//Update the supplementary node offset
 		supplementaryNode_offset = g_mhtFirstSplymtLeafOffset;
     }
 
 	//3.将节点信息写入
+	//3. Write node information
 	printf("supplementaryNode_offset: %d\n", supplementaryNode_offset);
 	//修改节点信息并写入文件
+	//Modify node information and write to file
 	mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 	fo_read_mht_block2(fd, mhtblk_buffer, MHT_BLOCK_SIZE, supplementaryNode_offset, SEEK_SET);
@@ -758,9 +792,10 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 	updateMHTBlockHashByMHTBlock(mhtblk_buffer, supplementaryNode_offset, fd);
 
 	// 修改插入更新后的页码
+	// Modify the page number update caused by the insertion
 	update_interior_nodes_pageno(mhtblk_buffer, supplementaryNode_offset, fd);
-	//fdatasync(fd);
 	//4.找到下一个填充节点并更新MHT头文件信息
+	//4. Find the next filling node and update the MHT file header 
 	supplementaryNode_offset = find_the_first_leaf_splymt_block_by_offset(fd, supplementaryNode_offset);
 	printf("update  supplementaryNode_offset: %d\n", supplementaryNode_offset);
 	uchar *mhthdr_buffer = NULL;
@@ -1340,14 +1375,17 @@ void print_qnode_info(PQNode qnode_ptr){
 void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset)
 {
 	//存放左右孩子对应信息
+	//Store left and right child node information
 	int lchild_offset = 0;
 	int rchild_offset = 0;
 	uchar *lhash = NULL;
 	uchar *rhash = NULL;
 	//存放计算得到的新哈希值
+	//Store the calculated new hash value
 	uchar *new_hash = NULL;
 
 	//获取对应信息
+	//Get corresponding information
 	check_pointer((void*)parent_block_buf, "update_parent_block_buf");
 	lchild_offset = *((int*)(parent_block_buf + MHT_BLOCK_OFFSET_LCOS));
 	rchild_offset = *((int*)(parent_block_buf + MHT_BLOCK_OFFSET_RCOS));
@@ -1360,14 +1398,16 @@ void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset)
 	fo_read_mht_file(g_mhtFileFdRd, rhash, HASH_LEN, rchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
 
 	//计算新的哈希值并替换
+	//Calculate the new hash value and replace
 	new_hash = (uchar*) malloc(HASH_LEN);
 	memset(new_hash, 0, HASH_LEN);
 	generateCombinedHash_SHA256(lhash, rhash, new_hash, HASH_LEN);
 	memcpy(parent_block_buf + MHT_BLOCK_OFFSET_HASH, new_hash, HASH_LEN);
 	//测试输出新得到的哈希值
-	uchar hash_string[HASH_STR_LEN];
-	memset(hash_string, 0, HASH_STR_LEN);
-	convert_hash_to_string(parent_block_buf + MHT_BLOCK_OFFSET_HASH, hash_string, HASH_STR_LEN);
+	//Test and output the newly obtained hash value
+	//uchar hash_string[HASH_STR_LEN];
+	//memset(hash_string, 0, HASH_STR_LEN);
+	//convert_hash_to_string(parent_block_buf + MHT_BLOCK_OFFSET_HASH, hash_string, HASH_STR_LEN);
 	//printf("The cal hash value: %s\n", hash_string);
 
 	free(lhash);
@@ -1419,6 +1459,7 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 	int block_offset = 0;
 	int rchild_offset = 0;
 	//临时存放MHT节点信息
+	// Temporarily store MHT node information
 	uchar *temp_block_buf = NULL;
 	uint32 most_right_pgno = UNASSIGNED_PAGENO;
 	PMHT_BLOCK mhtblk_ptr = NULL;
@@ -1430,6 +1471,7 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 	}
 
 	//查找其最右子树的页码
+	//Find the page number of its rightmost subtree
 	block_offset = offset;
 	temp_block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
@@ -1437,6 +1479,7 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 	while((rchild_offset = *((int*)(temp_block_buf + MHT_BLOCK_OFFSET_RCOS))) !=0)
 	{
 		//读取右孩子节点信息
+		//Read the right child node information
 		block_offset = block_offset + rchild_offset * MHT_BLOCK_SIZE;
 		//printf("block_offset:%d\n", block_offset);
 		memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
@@ -1446,10 +1489,13 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 	//printf("most_right_pgno:%d\n", most_right_pgno);
 	
 	//构造队列节点
+	//Construct the queue node
 	//1.恢复MHT节点
+	//1. Restore the MHT node
 	mhtblk_ptr = makeMHTBlock();
 	unserialize_mht_block(mht_block_buf, MHT_BLOCK_SIZE, &mhtblk_ptr);
 	//2.生成队列节点
+	//2. Generate queue node
 	qnode_ptr = makeQNodebyMHTBlock(mhtblk_ptr, most_right_pgno);
 	if(!qnode_ptr)
 	{
@@ -1485,6 +1531,7 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 	}
 
 	//孩子节点为叶节点
+	//When the child node is a leaf node
 	pmht_buf_ptr = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(pmht_buf_ptr, 0, MHT_BLOCK_SIZE);
 	lmht_buf_ptr = (uchar*) malloc(MHT_BLOCK_SIZE);
@@ -1493,6 +1540,7 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 	memset(rmht_buf_ptr, 0, MHT_BLOCK_SIZE);
 
 	//读取对应页码信息进行修改
+	//Read the corresponding page number information to modify
 	parent_offset = (*((int*)(mht_block_buf + MHT_BLOCK_OFFSET_POS))) *  MHT_BLOCK_SIZE + offset;
 	//printf("offset : %d\t", offset);
 	//printf("parent_offset : %d\t", parent_offset);
@@ -1525,6 +1573,7 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 	fo_update_mht_block2(fd, lmht_buf_ptr, MHT_BLOCK_SIZE, lchild_offset, SEEK_SET);
 	fo_update_mht_block2(fd, rmht_buf_ptr, MHT_BLOCK_SIZE, rchild_offset, SEEK_SET);
 	//沿路径更新其父节点的页码信息
+	//Update the page number information of its parent node along the path
 	while((pmht_buf_ptr +MHT_BLOCK_OFFSET_RSVD)[0] != 0x01 && (temp_offset= *((int*)(pmht_buf_ptr +MHT_BLOCK_OFFSET_POS))) !=0)
 	{
 		memset(pmht_buf_ptr, 0, MHT_BLOCK_SIZE);
@@ -1538,6 +1587,7 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 		fo_read_mht_block2(fd, lmht_buf_ptr, MHT_BLOCK_SIZE, lchild_offset, SEEK_SET);
 		lchild_pgno = *((int*)(lmht_buf_ptr + MHT_BLOCK_OFFSET_PAGENO));
 		//查找对应RMSL即查找其最右子树的页码
+		//Find the corresponding RMSL that is to find the page number of its rightmost subtree
 		int block_offset = lchild_offset ;
 		int temp_roffset = UNASSIGNED_OFFSET;
 		uchar *temp_block_buf  = NULL;
@@ -1547,6 +1597,7 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 		while((temp_roffset = *((int*)(temp_block_buf + MHT_BLOCK_OFFSET_RCOS))) !=0)
 		{
 			//读取右孩子节点信息
+			//Read the right child node information
 			block_offset = block_offset + temp_roffset * MHT_BLOCK_SIZE;
 			//printf("block_offset:%d\n", block_offset);
 			memset(temp_block_buf, 0, MHT_BLOCK_SIZE);

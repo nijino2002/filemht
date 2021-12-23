@@ -146,6 +146,14 @@ Parameters:
 returns:
 		如果更新失败，返回值小于0。
 */
+/**
+ * @brief  		   Update the hash value of the node on the path from a certain MHT node to the root
+ *
+ * 	@param[in]		update_block_buf: 				A pointer to the updated node block information.  
+ *	@param[in]		update_blobk_offset:		 The offset of the updated node block in the file
+ *
+ * 	@return		  		If fails,values <= 0 will be returned.
+*/
 int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd);
 
 /**
@@ -161,7 +169,7 @@ int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd);
 int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len, int fd);
 
 /**
-根据给定的结点块信息更新MHT信息
+Update the MHT information according to the given node block information
 Parameters:
 		mhtblk_buffer: 被更新的页节点块信息.
 		blobk_offset:被更新的页节点块偏移量
@@ -169,6 +177,15 @@ Parameters:
 returns:
 		如果更新失败，返回值小于0。
  */
+/**
+ *  @brief					  Update the MHT information according to the given node block information
+ *
+ * 	@param[in] 			mhtblk_buffer: 		 A pointer to the updated node block information.  
+ *	@param[in] 			blobk_offset:		 	The offset of the updated node block in the file
+ *	@param[in] 			fd:									The file descriptor
+ *
+ *  @return					If fails,values <= 0 will be returned.
+*/
 int updateMHTBlockHashByMHTBlock(uchar *mhtblk_buffer, int blobk_offset, int fd);
 
 /**
@@ -347,6 +364,15 @@ Parameters:
 	parent_block_buf: 初始父节点块信息.
 	offset: the 父节点对应的绝对偏移量
 */
+/**
+ *  @brief					  Update the MHT information according to the given node block information
+ *
+ * 	@param[in] 			fd:											The file descriptor.
+ *	@param[in] 			parent_block_buf: 		 A pointer to the updated node block information.  
+ *	@param[in] 			offset:		 						    The offset of the updated node block in the file.
+ *
+ *  @return					If fails,values <= 0 will be returned.
+*/
 void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset);
 
 /*
@@ -356,6 +382,14 @@ void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset);
 *	RMSTLPN:最右子树的叶子节点页码值
 * Return: 生成的队列节点指针
  */
+/**
+ *  @brief					  Generate a queue node from PMHT_BLOCK
+ *
+ * 	@param[in] 			mhtblk_ptr:		A pointer to PMHT_BLOCK
+ *	@param[in] 			RMSTLPN: 		Page no. of the leaf node of the right-most subtree. 
+ *
+ *  @return					A pointer to a new created queue node.
+*/
 PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN);
 
 /*将从文件中独到的节点信息转换成队列节点
@@ -365,6 +399,14 @@ PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN);
 * Return:
 *	构造好的节点指针
 */
+/**
+ *  @brief					  Convert the node information read from the file into a queue node
+ *
+ * 	@param[in] 			mht_block_buf:			The pointer to MHT block buffer
+ *	@param[in] 			offset:		 						 The offset of the updated node block in the file.
+ *
+ *  @return					A pointer to a new created queue node.
+*/
 PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset);
 
 /*
@@ -373,6 +415,15 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset);
 *	uchar *mht_block_buf: 读取到的信息.
 *	offset:该节点信息的偏移
 *	fd: 文件描述符
+*/
+/**
+ *  @brief					  When the filling node is used to complete the insert operation, update the page number change caused by it.
+ *
+ * 	@param[in] 			mht_block_buf:			The pointer to MHT block buffer
+ *	@param[in] 			offset:		 						 The offset of the updated node block in the file.
+  *	@param[in] 			fd :                      				The file descriptor
+ *
+ *  @return					NULL
 */
 void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd);
 
