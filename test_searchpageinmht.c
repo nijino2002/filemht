@@ -13,15 +13,16 @@ int main(int argc, char const *argv[])
 {
 	int pageNo = UNASSIGNED_PAGENO;
 	PMHT_BLOCK mhtblk_ptr = NULL;
+	int fd = -1;
 
-	if(initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME) < 2){
+	if((fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME)) < 2){
 		printf("Failed to open file %s\n", MHT_DEFAULT_FILE_NAME);
 		exit(0);
 	}
 
 	printf("Input page number to be searched: ");
 	scanf("%d", &pageNo);
-	mhtblk_ptr = searchPageByNo(pageNo);
+	mhtblk_ptr = searchPageByNo(fd, pageNo);
 	if(mhtblk_ptr){
 		printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
 		freeMHTBlock(&mhtblk_ptr);

@@ -28,7 +28,7 @@ int main(int argc, char const *argv[])
     PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
 	PMHT_BLOCK tmpblk_ptr = NULL;
 	tmpblk_ptr = makeMHTBlock();
-	if(!(mhtfilehdr_ptr = readMHTFileHeader()))
+	if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
     {
 		debug_print("insertpageinmht", "Failed to read MHT file header");
 		return -1;
@@ -46,7 +46,7 @@ int main(int argc, char const *argv[])
 	}
 
 	//插入数据
-	for(int i=4; i<8;  i++){
+	for(int i=20; i<23;  i++){
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i, tmp_hash_buffer); 
@@ -64,7 +64,7 @@ int main(int argc, char const *argv[])
 		mhtblk_ptr = NULL;
 	}
 
-	if(!(mhtfilehdr_ptr = readMHTFileHeader()))
+	if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
     {
 		debug_print("insertpageinmht", "Failed to read MHT file header");
 		return -1;

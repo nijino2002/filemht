@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
 
 	printf("Input page number to be update: ");
 	scanf("%d", &pageNo);
-	mhtblk_ptr = searchPageByNo(pageNo);
+	mhtblk_ptr = searchPageByNo(fd, pageNo);
 	if(mhtblk_ptr){
 		convert_hash_to_string(mhtblk_ptr->m_hash, hash_string, HASH_STR_LEN);
 		printf("Found page: %d, and the hash value is: %s\n", mhtblk_ptr->m_pageNo, hash_string);

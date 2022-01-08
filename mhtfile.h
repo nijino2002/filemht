@@ -115,27 +115,29 @@ int initOpenMHTFileWR(uchar *pathname);
  *
  * @return     The new created pointer to the file header structure.
  */
-PMHT_FILE_HEADER readMHTFileHeader();
+PMHT_FILE_HEADER readMHTFileHeader(int fd);
 
 /**
  * @brief      Searching the corresponding page block in MHT file based on given page number.
  *
+ * @param[in]  fd       The file descriptor.
  * @param[in]  page_no  The page number
  *
  * @return     A new created pointer to an MHT block structure that preserving the found page block.
  *             Null will be returned if errors occur or no page is found.
  */
-PMHT_BLOCK searchPageByNo(int page_no);
+PMHT_BLOCK searchPageByNo(int fd, int page_no);
 
 /**
  * @brief      Locates an MHT block offset by page number.
  *
- * @param[in]  page_no  The given page number
+ * @param[in]  fd       The file descriptor.
+ * @param[in]  page_no  The given page number.
  *
  * @return     If success, the offset of the block corresponding to the given page number is returned,
  *             otherwise, values <= 0 will be returned.
  */
-int locateMHTBlockOffsetByPageNo(int page_no);
+int locateMHTBlockOffsetByPageNo(int fd, int page_no);
 
 /*
 更新某个MHT节点到根的路径上的节点的哈希值
@@ -149,8 +151,9 @@ returns:
 /**
  * @brief  		   Update the hash value of the node on the path from a certain MHT node to the root
  *
- * 	@param[in]		update_block_buf: 				A pointer to the updated node block information.  
- *	@param[in]		update_blobk_offset:		 The offset of the updated node block in the file
+ * 	@param[in]		update_block_buf: 			 A pointer to the updated node block information.
+ *	@param[in]		update_blobk_offset:		 The offset of the updated node block in the file.
+ *	@param[in] 		fd:					         The file descriptor.
  *
  * 	@return		  		If fails,values <= 0 will be returned.
 */
@@ -162,6 +165,7 @@ int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd);
  * @param[in]  page_no       The given page number
  * @param      hash_val      The new hash value
  * @param[in]  hash_val_len  The new hash value length
+ * @param[in]  fd		     The file descriptor
  *
  * @return     If success, the offset of the block that has been updated is returned, 
  *             otherwise, values <= 0 will be returned.
@@ -181,8 +185,8 @@ returns:
  *  @brief					  Update the MHT information according to the given node block information
  *
  * 	@param[in] 			mhtblk_buffer: 		 A pointer to the updated node block information.  
- *	@param[in] 			blobk_offset:		 	The offset of the updated node block in the file
- *	@param[in] 			fd:									The file descriptor
+ *	@param[in] 			blobk_offset:		 The offset of the updated node block in the file
+ *	@param[in] 			fd:					 The file descriptor
  *
  *  @return					If fails,values <= 0 will be returned.
 */
@@ -203,6 +207,40 @@ int updateMHTBlockHashByMHTBlock(uchar *mhtblk_buffer, int blobk_offset, int fd)
  *             otherwise, values <= 0 will be returned.
  */
 int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd);
+
+/*
+    往MHT文件中乱序插入一个页面，要求插入后MHT仍满足二叉平衡搜索树的特性。先判断页面是否存在，如果存在则进行更新操作，否则进行下一步操作。首先，
+    将文件原始信息拷贝到另一个辅助文件中。读取文件信息来确定该文件是否还有可填充节点，若没有，我们需要先对原始文件的MHT进行扩充，因为当原始MHT是一
+    个完全二叉树时，插入一页会出现悬空节点。接下来，在原始文件中找到要插入的位置，用page_no和hash_val生成新的节点信息去替代当前节点信息，同时完
+    成相应信息的更新。然后将剩余的节点信息从辅助文件中读出，覆盖回写至原始文件即可，直至两种文件中某一个文件结束或者辅助文件中剩下节点为填充节点时，
+    最后更新文件头信息即可。
+Parameters:
+		page_no:        被插入的页面的页码值
+		hash_val:       被插入的页面对应的哈希值
+		hash_val_len:   哈希值的长度
+returns:
+		如果插入失败，返回值小于0。
+*/
+/**
+ * @brief     Inserting a page out of order into the MHT file requires that the MHT still satisfies the characteristics
+ *            of a binary balanced search tree after insertion. First determine whether the page exists, and if so,
+ *            perform the update operation, otherwise, proceed to the next step. First, copy the original information of
+ *            the file into another auxiliary file. Read the file information to determine whether the file has nodes
+ *            that can be filled. If not, we need to expand the MHT of the original file, because when the original MHT
+ *            is a complete binary tree, inserting a page will have dangling nodes. Next, find the position to be
+ *            inserted in the original file, use page_no and hash_val to generate new node information to replace the
+ *            current node information, and complete the update of the corresponding information. Then read the remaining
+ *            node information from the auxiliary file, overwrite and write back to the original file, until one of the
+ *            two files ends or the remaining nodes in the auxiliary file are filled nodes, and finally update the file
+ *            header information.
+ *
+ * @param[in]  page_no        the page number value of the inserted page.
+ * @param[in]  hash_val       the hash value corresponding to the inserted page.
+ * @param[in]  hash_val_len   the length of the hash value.
+ *
+ * @return     If the insertion fails, the return value is less than 0.
+ */
+int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len);
 
 /*----------  Helper Functions  ---------------*/
 
@@ -427,6 +465,21 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset);
 */
 void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd);
 
+/*
+* 将MHT扩充为原有的2倍。
+* Parameters:
+*	fd: 文件描述符
+* Return: 如果成功，返回扩充后的填充节点位移量，否则返回-1.
+ */
+/**
+ *  @brief				Expand the MHT to 2 times the original..
+ *
+  *	@param[in] 			fd: The file descriptor
+ *
+ *  @return				If successful, return the expanded padding node displacement, otherwise return -1.
+*/
+int extentTheMHT(int fd);
+
 /*----------  File Operation Functions  ------------*/
 int fo_create_mhtfile(const char *pathname);
 
@@ -471,5 +524,8 @@ off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
 
 int fo_close_mhtfile(int fd);
 
+int fo_copy_file(char* srcPath,char *destPath);
+
+void fo_printMHTFile(int fd);
 
 #endif

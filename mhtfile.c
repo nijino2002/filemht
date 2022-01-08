@@ -284,12 +284,12 @@ int initOpenMHTFileWR(uchar *pathname){
 	return ret;
 }
 
-PMHT_FILE_HEADER readMHTFileHeader() {
+PMHT_FILE_HEADER readMHTFileHeader(int fd) {
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
 	uchar *mht_file_header_buffer = NULL;
 	uchar *tmp_ptr = NULL;
 
-	if(g_mhtFileFdRd < 3){
+	if(fd < 3){
 		debug_print("readMHTFileHeader", "Invalid file descriptor for reading");
 		return NULL;
 	}
@@ -300,7 +300,7 @@ PMHT_FILE_HEADER readMHTFileHeader() {
 	}
 	memset(mht_file_header_buffer, 0, MHT_HEADER_LEN);
 
-	fo_read_mht_file_header(g_mhtFileFdRd, mht_file_header_buffer, MHT_HEADER_LEN);
+	fo_read_mht_file_header(fd, mht_file_header_buffer, MHT_HEADER_LEN);
 	// Preparing to parse MHT file header buffer into MHT file header structure
 	if(!(mht_file_header_ptr = (PMHT_FILE_HEADER) malloc(sizeof(MHT_FILE_HEADER)))) {
 		debug_print("readMHTFileHeader", "Failed to allocate memory for mht_file_header_ptr");
@@ -318,7 +318,7 @@ PMHT_FILE_HEADER readMHTFileHeader() {
 	return mht_file_header_ptr;
 }
 
-int locateMHTBlockOffsetByPageNo(int page_no) {
+int locateMHTBlockOffsetByPageNo(int fd, int page_no) {
 	PMHT_BLOCK mhtblk_ptr = NULL;	// MHT block preserving the found page
 	uchar *rootnode_buf = NULL;		// root node block buffer
 	uchar *tmpblk_buf = NULL;	// temporarily storing MHT block buffer
@@ -329,7 +329,7 @@ int locateMHTBlockOffsetByPageNo(int page_no) {
 	uint32	node_page_no = UNASSIGNED_PAGENO;		// temporarily preserving MHT block's page number
 	int ret_offset = -1;
 
-	if(g_mhtFileFdRd < 3){
+	if(fd < 3){
 		debug_print("locateMHTBlockOffsetByPageNo", "Invalid file descriptor");
 		return -1;
 	}
@@ -339,7 +339,7 @@ int locateMHTBlockOffsetByPageNo(int page_no) {
 		return -1;
 	}
 
-	if(!(mhtfilehdr_ptr = readMHTFileHeader())){
+	if(!(mhtfilehdr_ptr = readMHTFileHeader(fd))){
 		debug_print("locateMHTBlockOffsetByPageNo", "Failed to read MHT file header");
 		return -1;
 	}
@@ -349,29 +349,30 @@ int locateMHTBlockOffsetByPageNo(int page_no) {
 	memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
 	memset(childblk_buf, 0, MHT_BLOCK_SIZE);
 	// after reading root node block, the file pointer is at the end of the file.
-	fo_read_mht_block2(g_mhtFileFdRd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
+	fo_read_mht_block2(fd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
 	// reset the file pointer to the beginning of the root node block
-	fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+	fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
 	tmpblk_buf = rootnode_buf;
 	// binary search algorithm
 	while((node_level = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF) {
 		node_page_no = *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO));
 		//printf("pageNo: %d\n", node_page_no);
 		if(page_no <= node_page_no){	// go to left child block
-			fo_read_mht_block(g_mhtFileFdRd, childblk_buf, MHT_BLOCK_SIZE, 
+			fo_read_mht_block(fd, childblk_buf, MHT_BLOCK_SIZE, 
 								*((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_LCOS)), SEEK_CUR);
 		}
 		else{	// go to right child block
-			fo_read_mht_block(g_mhtFileFdRd, childblk_buf, MHT_BLOCK_SIZE, 
+			fo_read_mht_block(fd, childblk_buf, MHT_BLOCK_SIZE, 
 								*((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_RCOS)), SEEK_CUR);
 		}
 		// reset the file pointer to the beginning of the current left child node block
-		ret_offset = fo_locate_mht_pos(g_mhtFileFdRd, -MHT_BLOCK_SIZE, SEEK_CUR);
+		ret_offset = fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
 		tmpblk_buf = childblk_buf;
 	} // while
 
 	// Now, tmpblk_buf stores the final leaf node block
 	if(page_no != *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO))) {
+		//printf("offset:%d\n", ret_offset);
 		debug_print("locateMHTBlockOffsetByPageNo", "No page found");
 		return -1;	// search failed
 	}
@@ -380,14 +381,15 @@ int locateMHTBlockOffsetByPageNo(int page_no) {
 	free(rootnode_buf);
 	free(childblk_buf);
 	free(mhtfilehdr_ptr);
+	printf("offset:%d\n", ret_offset);
 	return ret_offset;
 }
 
-PMHT_BLOCK searchPageByNo(int page_no) {
+PMHT_BLOCK searchPageByNo(int fd, int page_no) {
 	PMHT_BLOCK mhtblk_ptr = NULL;
 	uchar *block_buf = NULL;
 
-	if(locateMHTBlockOffsetByPageNo(page_no) <= 0){
+	if(locateMHTBlockOffsetByPageNo(fd, page_no) <= 0){
 		debug_print("searchPageByNo", "No page found");
 		return NULL;
 	}
@@ -573,7 +575,7 @@ int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len
 		return -1;
 	}
 
-	if((update_blobk_offset = locateMHTBlockOffsetByPageNo(page_no)) <= 0){
+	if((update_blobk_offset = locateMHTBlockOffsetByPageNo(fd, page_no)) <= 0){
 		debug_print("updateMHTBlockHashByPageNo", "No page found");
 		return -2;
 	}
@@ -633,13 +635,13 @@ int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd){
 
 	temp_blobk_offset = update_blobk_offset;
 	memcpy(temp_block_buf, update_block_buf, MHT_BLOCK_SIZE);
-	//printf("update_blobk_offset:%d\n", update_blobk_offset);
+	//printf("updatePathToRoot：update_blobk_offset:%d\n", update_blobk_offset);
 	while((temp_block_buf+MHT_BLOCK_OFFSET_RSVD)[0] != 0x01 && (parent_offset = *((int*)(temp_block_buf+MHT_BLOCK_OFFSET_POS))) !=0)
 	{
 		//1.读取父节点信息
 		//1. Read parent node information
 		temp_blobk_offset = temp_blobk_offset + parent_offset * MHT_BLOCK_SIZE;
-		//printf("temp_blobk_offset:%d\n", temp_blobk_offset);
+		//printf("updatePathToRoot：temp_blobk_offset:%d\n", temp_blobk_offset);
 		memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
 		fo_read_mht_block2(fd, temp_block_buf, MHT_BLOCK_SIZE, temp_blobk_offset, SEEK_SET);
 
@@ -709,7 +711,7 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		return -1;
 	}
 
-	if(!(mhtfilehdr_ptr = readMHTFileHeader()))
+	if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
     {
 		debug_print("insertNewMHTBlock", "Failed to read MHT file header");
 		return -1;
@@ -722,57 +724,7 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 	//2.2 There is no node that can be filled, and a new completion node needs to be added; otherwise, proceed to the next update operation
     if(supplementaryNode_offset == 0)
     {
-		PQNode popped_qnode_ptr = NULL;
-		//构造补充节点写入文件
-		//Construct supplementary node to write file
-		//a.读取当前根结点信息
-		//a. Read the current root node information
-		rootnode_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
-		memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
-		printf("rootNodeOffset: %d\n", mhtfilehdr_ptr->m_rootNodeOffset);
-		fo_read_mht_block2(fd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
-
-		//b.将根结点入队，进行二叉树补全
-		//b. Put the root node into the team and perform binary tree completion
-		initQueue(&g_pQHeader, &g_pQ);
-		qnode_ptr = mht_buffer_to_qnode(rootnode_buf, mhtfilehdr_ptr->m_rootNodeOffset);
-		if(!qnode_ptr)
-		{
-			return -1;
-		}
-		enqueue(&g_pQHeader, &g_pQ, qnode_ptr);
-		//将光标定位到原来根结点的位置进行写入
-		//Position the cursor to the position of the original root node for writing
-		fo_locate_mht_pos(fd, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
-        deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, fd);
-		if(g_pQHeader->m_length > 1)
-		{
-			deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, fd);
-		}
-
-		//将新生成的根结点写入文件
-		//Write the newly generated root node into the file
-		popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ);
-		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
-		//由队列节点创建根结点
-		//Create the root node by the queue node
-		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
-		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
-		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
-		//设置根结点的保留区域，可与其他节点区别
-		//Set the reserved area of the root node, which can be distinguished from other nodes
-		(mhtblk_buffer + MHT_BLOCK_OFFSET_RSVD)[0] = 0x01;
-		g_mhtFileRootNodeOffset = fo_locate_mht_pos(fd, 0, SEEK_CUR);
-		printf("g_mhtFileRootNodeOffset:%d\n",g_mhtFileRootNodeOffset);
-		fo_update_mht_block(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
-		free(mhtblk_buffer); 
-		mhtblk_buffer = NULL;
-		print_qnode_info(popped_qnode_ptr);
-		deleteQNode(&popped_qnode_ptr);
-
-		//更新补充节点偏移量
-		//Update the supplementary node offset
-		supplementaryNode_offset = g_mhtFirstSplymtLeafOffset;
+		supplementaryNode_offset = extentTheMHT(fd);
     }
 
 	//3.将节点信息写入
@@ -797,11 +749,10 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 	//4.找到下一个填充节点并更新MHT头文件信息
 	//4. Find the next filling node and update the MHT file header 
 	supplementaryNode_offset = find_the_first_leaf_splymt_block_by_offset(fd, supplementaryNode_offset);
-	printf("update  supplementaryNode_offset: %d\n", supplementaryNode_offset);
+	//printf("update  supplementaryNode_offset: %d\n", supplementaryNode_offset);
 	uchar *mhthdr_buffer = NULL;
 	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
 	mhtfilehdr_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
-	printf("mhtfilehdr_ptr->m_rootNodeOffset: %d\n", mhtfilehdr_ptr->m_rootNodeOffset);
 	mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
 	serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
 	fo_update_mht_file_header(fd, mhthdr_buffer, MHT_HEADER_LEN);
@@ -810,6 +761,215 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 	free(rootnode_buf);
 	free(mhtblk_buffer);
 	freeMHTFileHeader(&mhtfilehdr_ptr);
+    return 0;
+}
+
+int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
+{
+    PMHT_BLOCK mhtblk_ptr = NULL;
+    uchar* read_block_buf = NULL;
+    uchar* write_block_buf = NULL;
+    PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
+    int read_offset = UNASSIGNED_OFFSET;
+    int write_offset = UNASSIGNED_OFFSET;
+    int read_rootNodeOffset = UNASSIGNED_OFFSET;
+	int write_rootNodeOffset = UNASSIGNED_OFFSET;
+    uint32	node_level = NODELEVEL_LEAF;
+	int supplementaryNode_offset = -1;
+	uchar *mhthdr_buffer = NULL;
+
+	int fd = MHT_INVALID_FILE_DSCPT;
+    int new_fd = MHT_INVALID_FILE_DSCPT;
+
+    if(page_no < 0) {
+        debug_print("insertNewPageDisorder", "Invalid page number");
+        return -1;
+    }
+
+    if(!hash_val || hash_val_len != HASH_LEN){
+        debug_print("insertNewPageDisorder", "Invalid hash_val or hash_val_len");
+        return -1;
+    }
+
+    //判断页面是否存在
+    //Check if the page exists
+	if( (fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME))  < 3){
+		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
+		exit(0);
+	}
+    mhtblk_ptr = searchPageByNo(fd,page_no);
+	fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
+    read_offset = write_offset = lseek(fd, 0, SEEK_CUR);
+    //如果页面已存在，则进行更新操作
+    //If the page already exists, perform the update operation
+    if(mhtblk_ptr){
+        printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
+        if( updateMHTBlockHashByPageNo(page_no, hash_val, HASH_LEN, fd) <= 0)
+        {
+            printf("Update failed.\n");
+            fo_close_mhtfile(fd);
+            return -1;
+        }
+        freeMHTBlock(&mhtblk_ptr);
+        return 0;
+    }
+	fo_close_mhtfile(fd);
+	
+	fd = MHT_INVALID_FILE_DSCPT;
+    //如果页面不存在，进行插入操作
+    //If the page does not exist, perform the insert operation
+    //1.创建临时文件并复制原有文件信息
+    //1. Create a temporary file and copy the original file information
+    fo_copy_file(MHT_DEFAULT_FILE_NAME, MHT_TMP_FILE_NAME);
+	if( (new_fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME))  < 2){
+		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
+		exit(0);
+	}
+	if( (fd = fo_open_mhtfile(MHT_TMP_FILE_NAME))  < 2){
+		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
+		exit(0);
+	}
+
+    //2.定位要插入的位置
+    //2. Locate the position to be inserted
+    if(!(mhtfilehdr_ptr = readMHTFileHeader(new_fd)))
+    {
+        debug_print("insertNewPageDisorder", "Failed to read MHT file header");
+        return -1;
+    }
+    write_rootNodeOffset = read_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
+    supplementaryNode_offset = mhtfilehdr_ptr->m_firstSupplementaryLeafOffset;
+    printf("rootNodeOffset :%d  supplementaryNode_offset: %d\n", read_rootNodeOffset, supplementaryNode_offset);
+
+    ////If there is no place to insert, extend the MHT
+    if(supplementaryNode_offset == 0)
+    {
+        supplementaryNode_offset = extentTheMHT(new_fd);
+		write_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+		mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
+		serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(new_fd, mhthdr_buffer, MHT_HEADER_LEN);
+		//printf("rootNodeOffset :%d  supplementaryNode_offset: %d\n", write_rootNodeOffset, supplementaryNode_offset);
+    }
+
+    //3.更新文件
+    //3. Update the file
+	locateMHTBlockOffsetByPageNo(new_fd, page_no);
+    read_offset = write_offset = lseek(new_fd, 0, SEEK_CUR);
+    read_block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+    write_block_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+
+    //3.1 将插入页面写入文件
+    //3.1 Write the inserted page to the file
+    //将信息进行更新
+    //update the information
+	bool insert_isn = FALSE;
+    printf("write_offset :%d   read_offset: %d\n",write_offset,read_offset);
+    memset(write_block_buf, 0, MHT_BLOCK_SIZE);
+    fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
+    memcpy(write_block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
+    memcpy(write_block_buf + MHT_BLOCK_OFFSET_PAGENO, &page_no, sizeof(int));
+	memcpy(write_block_buf + MHT_BLOCK_OFFSET_ISN, &insert_isn, sizeof(char));
+    //将更新信息块写入文件
+    //Write the update information block to the file
+    if( fo_update_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET) <= 0)
+    {
+        return -1;
+    }
+    //更新验证路径
+    //Update verification path
+    updatePathToRoot(write_block_buf, write_offset, new_fd);
+    //修改插入更新后的页码
+    //Modify the page number update caused by the insertion
+    update_interior_nodes_pageno(write_block_buf, write_offset, new_fd);
+    write_offset += MHT_BLOCK_SIZE;
+    //3.2 将剩余页面写入文件
+    //3.2 Write the remaining pages to the file
+    int no = 0;
+    while(write_offset < write_rootNodeOffset && read_offset < read_rootNodeOffset)
+    {
+        //查找下一个写入位置
+        //find the next write location
+        memset(write_block_buf, 0, MHT_BLOCK_SIZE);
+        fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
+        while((node_level = *((int*)(write_block_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF)
+        {
+            memset(write_block_buf, 0, MHT_BLOCK_SIZE);
+            write_offset += MHT_BLOCK_SIZE;
+            if(write_offset == write_rootNodeOffset)
+            {
+                break;
+            }
+            fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
+        }
+		if(write_offset == write_rootNodeOffset)
+        {
+            break;
+        }
+        //查找要写入的叶子节点
+        //find the leaf node to write
+        memset(read_block_buf, 0, MHT_BLOCK_SIZE);
+        fo_read_mht_block2(fd, read_block_buf, MHT_BLOCK_SIZE, read_offset, SEEK_SET);
+        while((node_level = *((int*)(read_block_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF)
+        {
+            memset(read_block_buf, 0, MHT_BLOCK_SIZE);
+            read_offset += MHT_BLOCK_SIZE;
+            if(read_offset >= read_rootNodeOffset)
+            {
+                break;
+            }
+            fo_read_mht_block2(fd, read_block_buf, MHT_BLOCK_SIZE, read_offset, SEEK_SET);
+        }
+        if(read_offset >= read_rootNodeOffset || *(read_block_buf + MHT_BLOCK_OFFSET_ISN) == TRUE)
+        {
+            break;
+        }
+
+        //查看写入位置
+        //check the write location
+        //printf("no: %d,  write_offset: %d, read_offset: %d\n", no, write_offset, read_offset);
+        //将信息进行更新
+        //update the information
+        memcpy(write_block_buf + MHT_BLOCK_OFFSET_HASH, read_block_buf + MHT_BLOCK_OFFSET_HASH, HASH_LEN);
+        memcpy(write_block_buf + MHT_BLOCK_OFFSET_PAGENO, read_block_buf + MHT_BLOCK_OFFSET_PAGENO, sizeof(int));
+        memcpy(write_block_buf + MHT_BLOCK_OFFSET_ISN, read_block_buf + MHT_BLOCK_OFFSET_ISN, sizeof(char));
+
+        //将更新信息块写入文件
+        //Write the update information block to the file
+        if( fo_update_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET) <= 0)
+        {
+            return -1;
+        }
+
+        //更新验证路径
+        //Update verification path
+        updatePathToRoot(write_block_buf, write_offset, new_fd);
+        //修改插入更新后的页码
+        //Modify the page number update caused by the insertion
+        update_interior_nodes_pageno(write_block_buf, write_offset, new_fd);
+
+        write_offset += MHT_BLOCK_SIZE;
+        read_offset += MHT_BLOCK_SIZE;
+        no++;
+    }
+
+    //更新文件头信息
+    //Update file header information
+    supplementaryNode_offset = find_the_first_leaf_splymt_block_by_offset(new_fd, supplementaryNode_offset);
+    mhthdr_buffer = NULL;
+    mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+    mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
+    serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+    fo_update_mht_file_header(new_fd, mhthdr_buffer, MHT_HEADER_LEN);
+	fo_printMHTFile(new_fd);
+
+    fo_close_mhtfile(new_fd);
+	fo_close_mhtfile(fd);
+    freeMHTBlock(&mhtblk_ptr);
+    free(read_block_buf);
+    free(write_block_buf);
+    free(mhtfilehdr_ptr);
     return 0;
 }
 
@@ -848,7 +1008,7 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
-	for(i = 0; i < 3; i++){	// i refers to page number
+	for(i = 2; i < 17; i+=4){	// i refers to page number
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 		generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		mhtnode_ptr = makeMHTNode(i+1, tmp_hash_buffer); 
@@ -1469,7 +1629,8 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 		debug_print("mht_buffer_to_qnode", "Invalid mht_block_buf");
 		return NULL;
 	}
-
+	//memcpy(mht_block_buf+MHT_BLOCK_OFFSET_RSVD,)
+	memset(mht_block_buf+MHT_BLOCK_OFFSET_RSVD, 'R', MHT_BLOCK_RSVD_SIZE);
 	//查找其最右子树的页码
 	//Find the page number of its rightmost subtree
 	block_offset = offset;
@@ -1631,6 +1792,116 @@ void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd)
 	free(rmht_buf_ptr);
 
 	return;
+}
+
+int extentTheMHT(int fd)
+{
+    //填充节点的偏移量
+    //Fill the offset of the node
+    int supplementaryNode_offset = 0;
+    uchar *mhtblk_buffer = NULL;
+    //文件头信息
+    //File header information
+    PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
+    //存放根结点信息
+    //Store root node information
+    uchar *rootnode_buf = NULL;
+    PQNode qnode_ptr = NULL;
+
+    //查找当前MHT是否有可以填充的节点
+    //Find out if there are nodes that can be filled
+    //1通过MHT文件头信息获取填充节点的offset
+    //1 Obtain the offset of the filling node through the MHT file header information
+    if(fd < 3)
+    {
+        debug_print("extentTheMHT", "Invalid file descriptor");
+        return -1;
+    }
+
+    if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
+    {
+        debug_print("extentTheMHT", "Failed to read MHT file header");
+        return -1;
+    }
+    supplementaryNode_offset = mhtfilehdr_ptr->m_firstSupplementaryLeafOffset;
+    printf("supplementaryNode_offset :%d\n",supplementaryNode_offset );
+
+    g_mhtFileRootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
+    if(supplementaryNode_offset == 0)
+    {
+        PQNode popped_qnode_ptr = NULL;
+        //构造补充节点写入文件
+        //Construct supplementary node to write file
+        //a.读取当前根结点信息
+        //a. Read the current root node information
+        rootnode_buf = (uchar*) malloc(MHT_BLOCK_SIZE);
+        memset(rootnode_buf, 0, MHT_BLOCK_SIZE);
+        printf("rootNodeOffset: %d\n", mhtfilehdr_ptr->m_rootNodeOffset);
+        fo_read_mht_block2(fd, rootnode_buf, MHT_BLOCK_SIZE, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
+
+        //b.将根结点入队，进行二叉树补全
+        //b. Put the root node into the team and perform binary tree completion
+        initQueue(&g_pQHeader, &g_pQ);
+        qnode_ptr = mht_buffer_to_qnode(rootnode_buf, mhtfilehdr_ptr->m_rootNodeOffset);
+        if(!qnode_ptr)
+        {
+            return -1;
+        }
+        enqueue(&g_pQHeader, &g_pQ, qnode_ptr);
+        //将光标定位到原来根结点的位置进行写入
+        //Position the cursor to the position of the original root node for writing
+        fo_locate_mht_pos(fd, mhtfilehdr_ptr->m_rootNodeOffset, SEEK_SET);
+        deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, fd);
+        if(g_pQHeader->m_length > 1)
+        {
+            deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, fd);
+        }
+
+        //将新生成的根结点写入文件
+        //Write the newly generated root node into the file
+        popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ);
+        check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
+        //由队列节点创建根结点
+        //Create the root node by the queue node
+        mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+        memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+        qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+        //设置根结点的保留区域，可与其他节点区别
+        //Set the reserved area of the root node, which can be distinguished from other nodes
+        (mhtblk_buffer + MHT_BLOCK_OFFSET_RSVD)[0] = 0x01;
+        g_mhtFileRootNodeOffset = fo_locate_mht_pos(fd, 0, SEEK_CUR);
+        //printf("g_mhtFileRootNodeOffset:%d\n",g_mhtFileRootNodeOffset);
+        fo_update_mht_block(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+        free(mhtblk_buffer);
+        mhtblk_buffer = NULL;
+        print_qnode_info(popped_qnode_ptr);
+        deleteQNode(&popped_qnode_ptr);
+
+        //更新补充节点偏移量
+        //Update the supplementary node offset
+        //supplementaryNode_offset = g_mhtFirstSplymtLeafOffset;
+    }
+    //更新补充节点偏移量
+    //Update the supplementary node offset
+    supplementaryNode_offset = find_the_first_leaf_splymt_block_by_offset(fd, mhtfilehdr_ptr->m_rootNodeOffset);
+
+    //更新MHT头文件信息
+    //update the MHT file header
+    supplementaryNode_offset = find_the_first_leaf_splymt_block_by_offset(fd, supplementaryNode_offset);
+    //printf("update  supplementaryNode_offset: %d\n", supplementaryNode_offset);
+    uchar *mhthdr_buffer = NULL;
+    mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+    mhtfilehdr_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+    //printf("mhtfilehdr_ptr->m_rootNodeOffset: %d\n", mhtfilehdr_ptr->m_rootNodeOffset);
+    mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
+    serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+    fo_update_mht_file_header(fd, mhthdr_buffer, MHT_HEADER_LEN);
+
+    free(mhthdr_buffer);
+    free(rootnode_buf);
+    free(mhtblk_buffer);
+    freeMHTFileHeader(&mhtfilehdr_ptr);
+    return supplementaryNode_offset;
 }
 /*----------  File Operation Functions  ------------*/
 
@@ -1850,4 +2121,64 @@ off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
 
 int fo_close_mhtfile(int fd){
 	return close(fd);
+}
+
+int fo_copy_file(char* srcPath,char *destPath)
+{
+	int fd_src, fd_dest, ret;
+	fd_src = open(srcPath, O_RDONLY);
+		
+	if(fd_src < 3)
+	{
+		perror("srcPath");
+		return -1;
+	}
+	fd_dest = open(destPath, O_WRONLY|O_CREAT, 0755);
+	if(fd_dest < 3)
+	{
+		close(fd_src);
+		perror("destPath");
+		return -1;
+	}
+	char buf[1024] = "";
+	do
+	{
+    	memset(buf,0,sizeof(buf));
+		ret = read(fd_src, buf, sizeof(buf));
+		if(ret>0)
+			write(fd_dest, buf, ret);
+	}while(ret >0);
+	close(fd_src);
+	close(fd_dest);
+	return 0;
+}
+
+void fo_printMHTFile(int fd)
+{
+	uchar *mhtblk_buffer = NULL;
+    PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
+    PMHT_BLOCK tmpblk_ptr = NULL;
+
+	if(fd < 0){
+		debug_print("fo_printMHTFile", "Invalid fd");
+		return;
+	}
+
+    tmpblk_ptr = makeMHTBlock();
+    if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
+    {
+        debug_print("insertpageinmht", "Failed to read MHT file header");
+        return;
+    }
+
+    printf("FSLLOS: %d,   RNO:%d\n",mhtfilehdr_ptr->m_firstSupplementaryLeafOffset, mhtfilehdr_ptr->m_rootNodeOffset);
+    mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+    while(fo_locate_mht_pos(fd, 0, SEEK_CUR) != mhtfilehdr_ptr->m_rootNodeOffset)
+    {
+        memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+        fo_read_mht_block2(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+        unserialize_mht_block(mhtblk_buffer,  MHT_BLOCK_SIZE, &tmpblk_ptr);
+        printf("pgno:%d\t level: %d\t ppgno:%d\t  lpgno:%d\t rpgno:%d\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_nodeLevel, tmpblk_ptr->m_parentPageNo, tmpblk_ptr->m_lChildPageNo, tmpblk_ptr->m_rChildPageNo);
+		//printf("pgno:%d\t ISN: %hhu\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_isSupplementaryNode);
+    }
 }

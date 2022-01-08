@@ -35,6 +35,9 @@
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
 #define MHT_INVALID_FILE_DSCPT      -1      // invalid file descriptor value
 
+#define MHT_TMP_FILE_NAME		"./mhtfile_temp.mf"
+#define BUF_LEN 4096
+
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
 
