@@ -9,6 +9,7 @@ PQNode makeQHeader() {
 	if(node_ptr == NULL)
 		return NULL;
 	node_ptr->m_length = 0;
+	node_ptr->m_is_written = FALSE;
 	node_ptr->m_MHTNode_ptr = NULL;
 	node_ptr->m_is_supplementary_node = (uchar) FALSE;
 	node_ptr->m_is_zero_node = (uchar) FALSE;
@@ -27,6 +28,7 @@ PQNode makeQNode(PMHTNode pmhtnode, uint16 level){
 	if(node_ptr == NULL)
 		return NULL;
 	node_ptr->m_level = level;
+	node_ptr->m_is_written = FALSE;
 	node_ptr->m_MHTNode_ptr = pmhtnode;
 	node_ptr->m_is_supplementary_node = (uchar) FALSE;
 	node_ptr->m_is_zero_node = (uchar) FALSE;
@@ -49,6 +51,7 @@ PQNode makeQNode2(PMHTNode pmhtnode,
 	if(node_ptr == NULL)
 		return NULL;
 	node_ptr->m_level = level;
+	node_ptr->m_is_written = FALSE;
 	node_ptr->m_MHTNode_ptr = pmhtnode;
 	node_ptr->m_is_supplementary_node = (uchar) ISN;
 	node_ptr->m_is_zero_node = (uchar) IZN;
@@ -151,6 +154,55 @@ PQNode dequeue(PQNode *pQHeader, PQNode *pQ){
 	return tmp_ptr;
 }
 
+PQNode dequeue_sub(PQNode *pQHeader, PQNode *pQ){
+	PQNode tmp_ptr = NULL;
+	PQNode first_elem_ptr = NULL;
+	if(*pQ == *pQHeader){	// empty queue
+		printf("Empty queue.\n");
+		return NULL;
+	}
+
+	first_elem_ptr = (*pQHeader)->next;
+	tmp_ptr = first_elem_ptr->next;
+	if(!tmp_ptr) {
+		check_pointer_ex(tmp_ptr, "tmp_ptr", "dequeue_sub", "null second element pointer");
+		return NULL;
+	}
+
+	first_elem_ptr->next = tmp_ptr->next;
+	if(tmp_ptr->next)	//otherwise, tmp_ptr == pQ.
+		tmp_ptr->next->prev = first_elem_ptr;
+	else
+		*pQ = first_elem_ptr;
+
+	(*pQHeader)->m_length > 0 ? (*pQHeader)->m_length-- : nop();
+
+	return tmp_ptr;
+}
+
+PQNode dequeue_sppos(PQNode *pQHeader, PQNode *pQ, PQNode pos) {
+	PQNode tmp_ptr = NULL;
+	
+	if(*pQ == *pQHeader){	// empty queue
+		printf("Empty queue.\n");
+		return NULL;
+	}
+
+	if(pos == (*pQHeader)){   // invalid position
+		printf("Invalid dequeue position.\n");
+		return NULL;
+	}
+
+	tmp_ptr = pos;
+	pos->prev->next = tmp_ptr->next;
+	if(tmp_ptr->next)
+		tmp_ptr->prev = pos->prev;
+
+	(*pQHeader)->m_length > 0 ? (*pQHeader)->m_length-- : nop();
+
+	return tmp_ptr;
+}
+
 PQNode peekQueue(PQNode pQHeader){
 	if(pQHeader && pQHeader->next)
 		return (PQNode)(pQHeader->next);
@@ -233,4 +285,42 @@ void printQueue(PQNode pQHeader) {
 	}
 
 	return;
+}
+
+
+void print_qnode_info(PQNode qnode_ptr){
+	if(!qnode_ptr){
+		check_pointer(qnode_ptr, "qnode_ptr");
+		debug_print("print_qnode_info", "Null parameters");
+		return;
+	}
+
+	printf("PageNo|Level|LCPN|LCOS|RCPN|RCOS|PPN|POS: %d|%d|%d|%d|%d|%d|%d|%d\t", 
+			qnode_ptr->m_MHTNode_ptr->m_pageNo, 
+			qnode_ptr->m_level,
+			qnode_ptr->m_MHTNode_ptr->m_lchildPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_lchildOffset,
+			qnode_ptr->m_MHTNode_ptr->m_rchildPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
+			qnode_ptr->m_MHTNode_ptr->m_parentPageNo,
+			qnode_ptr->m_MHTNode_ptr->m_parentOffset);
+
+	return;
+}
+
+void print_qnode_info_ex(PQNode qnode_ptr, uint32 flags){
+	const char* THIS_FUNC_NAME = "printQNode";
+
+	if(!qnode_ptr){
+		check_pointer_ex(qnode_ptr, "qnode_ptr", THIS_FUNC_NAME, "null qnode_ptr");
+		return;
+	}
+
+	printf("[");
+	if(flags && PRINT_QNODE_FLAG_INDEX){
+		printf("index: %d, ", qnode_ptr->m_MHTNode_ptr->m_pageNo);
+	}
+	if(flags && PRINT_QNODE_FLAG_HASH){
+		print_hash_value(qnode_ptr->m_MHTNode_ptr->m_hash);
+	}
 }

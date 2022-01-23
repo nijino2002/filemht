@@ -1512,26 +1512,6 @@ int find_the_first_leaf_splymt_block_by_offset(int fd, int offset) {
 	return -1;	// no proper block is found
 }
 
-void print_qnode_info(PQNode qnode_ptr){
-	if(!qnode_ptr){
-		check_pointer(qnode_ptr, "qnode_ptr");
-		debug_print("print_qnode_info", "Null parameters");
-		return;
-	}
-
-	printf("PageNo|Level|LCPN|LCOS|RCPN|RCOS|PPN|POS: %d|%d|%d|%d|%d|%d|%d|%d\t", 
-			qnode_ptr->m_MHTNode_ptr->m_pageNo, 
-			qnode_ptr->m_level,
-			qnode_ptr->m_MHTNode_ptr->m_lchildPageNo,
-			qnode_ptr->m_MHTNode_ptr->m_lchildOffset,
-			qnode_ptr->m_MHTNode_ptr->m_rchildPageNo,
-			qnode_ptr->m_MHTNode_ptr->m_rchildOffset,
-			qnode_ptr->m_MHTNode_ptr->m_parentPageNo,
-			qnode_ptr->m_MHTNode_ptr->m_parentOffset);
-
-	return;
-}
-
 void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset)
 {
 	//存放左右孩子对应信息

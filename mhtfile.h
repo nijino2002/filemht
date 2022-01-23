@@ -386,14 +386,6 @@ bool is_valid_offset_in_mht_block_buffer(uint32 offset);
  */
 int find_the_first_leaf_splymt_block_by_offset(int fd, int offset);
 
-/**
- * Printing a QNode structure for debugging.
- * @Author   DiLu
- * @DateTime 2021-11-10T14:19:35+0800
- * @param    qnode_ptr                [A pointer to a QNode structure]
- */
-void print_qnode_info(PQNode qnode_ptr);
-
 
 /*
 计算父节点哈希值

@@ -3,12 +3,18 @@
 
 #include "mhtdefs.h"
 
+#define PRINT_QNODE_FLAG_INDEX	0x00000001
+#define PRINT_QNODE_FLAG_HASH	0x00000002
+#define PRINT_QNODE_FLAG_LEVEL	0x00000004
+
+
 typedef struct _QNode
 {
 	union{
 		uint32	m_level;
 		uint32	m_length;
 	};
+	bool m_is_written;	  /* whether the node has been written to the file (only for the dequeue_sub scenario) */
 	uchar m_is_supplementary_node;	/* temporarily marking whether the node is a supplementary node to build a complete MHT */
 	uchar m_is_zero_node;	/* temporarily marking whether node's hash is hashed zero */
 	uint32 m_RMSTL_page_no;	/* temporarily storing the page number of the right-most sub-tree leaf, used to craete binary search structure */
@@ -105,6 +111,19 @@ Return: the dequeued node pointer.
  */
 PQNode dequeue(PQNode *pQHeader, PQNode *pQ);
 
+/**
+ * @brief      { With this function, the queue can be dequeued from the second 
+ * 				element instead of the queue's header, which will be remained. }
+ *
+ * @param      pQHeader  The pointer to the queue header
+ * @param      pQ        The tail pointer of the queue.
+ *
+ * @return     The pq node.
+ */
+PQNode dequeue_sub(PQNode *pQHeader, PQNode *pQ);
+
+PQNode dequeue_sppos(PQNode *pQHeader, PQNode *pQ, PQNode pos);
+
 /*
 Returning the first node of the queue without dequeuing it.
 Parameters:
@@ -150,6 +169,16 @@ PQNode lookBackward(PQNode pNode);
 
 
 void printQueue(PQNode pQHeader);
+
+/**
+ * Printing a QNode structure for debugging.
+ * @Author   DiLu
+ * @DateTime 2021-11-10T14:19:35+0800
+ * @param    qnode_ptr                [A pointer to a QNode structure]
+ */
+void print_qnode_info(PQNode qnode_ptr);
+
+void print_qnode_info_ex(PQNode qnode_ptr, uint32 flags);
 
 
 #endif

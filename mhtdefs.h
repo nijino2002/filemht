@@ -5,7 +5,7 @@
 
 typedef struct  _MHTNode
 {
-	uint32	m_pageNo;
+	int 	m_pageNo;
 	char	m_hash[32];
 	/* a minus offset indicates the distance that the file pointer has to move back 
 	from current node to the member.

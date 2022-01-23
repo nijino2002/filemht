@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_SIGNED_INT  0x7fffffff
+#define MAX_UNSIGNED_INT    0xffffffff
+#define UNASSIGNED_INDEX    -1
 #define HASH_LEN	32
 #define HASH_STR_LEN    70
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
@@ -27,7 +30,7 @@
 #define MHT_BLOCK_OFFSET_RSVD		(MHT_BLOCK_OFFSET_POS + sizeof(int))
 #define MHT_BLOCK_ATRRIB_NUM		12
 #define UNASSIGNED_OFFSET   0
-#define UNASSIGNED_PAGENO	0x7fffffff
+#define UNASSIGNED_PAGENO	MAX_SIGNED_INT
 #define SINGLENODECMB_PAGENO	-2
 #define NODELEVEL_LEAF		0
 #define MHT_FILE_MAGIC_STRING       "mhtfile_v1.0"
@@ -65,6 +68,18 @@ Parameters:
 	ptr_name: pointer's name.
  */
 void check_pointer(void* ptr, const char *ptr_name);
+
+/**
+ * @brief      { Checking whether a pointer is NULL. (An extended version) }
+ *
+ * @param      ptr       The pointer being checked.
+ * @param[in]  ptr_name  The pointer's name.
+ * @param[in]  from      where this debug message comes from.
+ * @param[in]  dbg_msg   The content of the debug message.
+ *
+ * @return     { if ptr is null, FALSE will be returned, otherwise TRUE will be returned. }
+ */
+bool check_pointer_ex(void* ptr, const char *ptr_name, const char *from, const char *dbg_msg);
 
 /*
 Printing a debug message.

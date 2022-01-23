@@ -42,6 +42,16 @@ void check_pointer(void* ptr, const char *ptr_name) {
 	return;
 }
 
+bool check_pointer_ex(void* ptr, const char *ptr_name, const char *from, const char *dbg_msg) {
+	if(!ptr){
+		printf("Pointer %s is NULL. ", ptr_name);
+		debug_print(from, dbg_msg);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 void debug_print(const char *from, const char *dbg_msg) {
 	if(!from || !dbg_msg) {
 		printf("DBGMSG ERROR: null message from a null source.\n");

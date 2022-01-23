@@ -191,5 +191,5 @@ void print_hash_value(BYTE *hash){
 	for(i = 0; i < SHA256_BLOCK_SIZE; i++) {
 		printf("%02x\t", hash[i]);
 	}
-	printf("\n");
+	// printf("\n");
 }
