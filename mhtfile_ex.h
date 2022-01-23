@@ -42,12 +42,27 @@ void buildMHTFileTest_ex(int fd, PDATA_ELEM de_array, int de_array_len);
  *	                Help Functions
 *****************************************************************/
 
-void process_all_elem(int fd, PQNode *pQHeader, PQNode *pQ, PDATA_ELEM de_array, int de_array_len);
+void process_all_elem(int fd_mht, 
+                      int fd_data, 
+                      PQNode *pQHeader, 
+                      PQNode *pQ, 
+                      PDATA_ELEM de_array, 
+                      int de_array_len);
 
-void deal_with_nodes_offset_ex(PQNode parent_ptr, PQNode lchild_ptr, PQNode rchild_ptr);
+void combine_nodes_with_same_levels(PQNode *pQHeader, 
+                                    PQNode *pQ);
+
+void deal_with_nodes_offset_ex(PQNode parent_ptr, 
+                               PQNode lchild_ptr, 
+                               PQNode rchild_ptr);
 
 uint32 compute_relative_distance_from_child_to_parent(PQNode child_ptr, 
 												 	  PQNode parent_ptr,
 												 	  uchar	rorl);
+
+void deal_with_node_index(PQNode qnode_ptr, 
+                          uchar *lvl_ctr_ptr,
+                          PDATA_ELEM de_array, 
+                          int de_array_len);
 
 #endif

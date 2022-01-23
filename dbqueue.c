@@ -194,10 +194,14 @@ PQNode dequeue_sppos(PQNode *pQHeader, PQNode *pQ, PQNode pos) {
 	}
 
 	tmp_ptr = pos;
-	pos->prev->next = tmp_ptr->next;
-	if(tmp_ptr->next)
-		tmp_ptr->prev = pos->prev;
-
+	if(pos->next) {
+		pos->prev->next = pos->next;
+		pos->next->prev = pos->prev;
+	}
+	else{
+		return dequeue(pQHeader, pQ);
+	}
+	
 	(*pQHeader)->m_length > 0 ? (*pQHeader)->m_length-- : nop();
 
 	return tmp_ptr;

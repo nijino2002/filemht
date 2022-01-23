@@ -37,6 +37,7 @@
 #define MHT_FILE_MAGIC_STRING_LEN       16
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
 #define MHT_INVALID_FILE_DSCPT      -1      // invalid file descriptor value
+#define MAX_LEVEL_COUNTER       100
 
 #define MHT_TMP_FILE_NAME		"./mhtfile_temp.mf"
 #define BUF_LEN 4096
@@ -60,6 +61,8 @@ extern int g_mhtFileFdRd;      // firstly defined in defs.c
 Do nothing.
  */
 void nop();
+
+void println();
 
 /*
 Checking whether a pointer is NULL.

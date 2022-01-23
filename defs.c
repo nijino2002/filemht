@@ -34,6 +34,12 @@ void nop() {
 	return;
 }
 
+void println(){
+	printf("\n");
+
+	return;
+}
+
 void check_pointer(void* ptr, const char *ptr_name) {
 	if(!ptr){
 		printf("Pointer %s is NULL.\n", ptr_name);
