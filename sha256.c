@@ -181,6 +181,21 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, WORD out_string_len) {
 	return;
 }
 
+int compare_two_hashes(BYTE* hash1, BYTE* hash2){
+	int ret = 1;	// TRUE
+	int i = 0;
+
+	for (i = 0; i < SHA256_BLOCK_SIZE; ++i)
+	{
+		if(hash1[i] != hash2[i]){
+			ret = 0;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 void print_hash_value(BYTE *hash){
 	int i = 0;
 

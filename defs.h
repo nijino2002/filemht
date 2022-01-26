@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_SIGNED_INT  0x7fffffff
 #define MAX_UNSIGNED_INT    0xffffffff
@@ -37,7 +38,8 @@
 #define MHT_FILE_MAGIC_STRING_LEN       16
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
 #define MHT_INVALID_FILE_DSCPT      -1      // invalid file descriptor value
-#define MAX_LEVEL_COUNTER       100
+#define ASCII_A_POS     65
+#define ASCII_Z_POS     90
 
 #define MHT_TMP_FILE_NAME		"./mhtfile_temp.mf"
 #define BUF_LEN 4096
@@ -62,7 +64,12 @@ Do nothing.
  */
 void nop();
 
+/**
+ * @brief      print a '\n'
+ */
 void println();
+
+char* generate_random_string(int str_len);
 
 /*
 Checking whether a pointer is NULL.

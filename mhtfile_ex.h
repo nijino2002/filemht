@@ -50,7 +50,7 @@ void process_all_elem(int fd_mht,
                       int de_array_len);
 
 void combine_nodes_with_same_levels(PQNode *pQHeader, 
-                                    PQNode *pQ);
+                                    PQNode *pQ, int of_fd);
 
 void deal_with_nodes_offset_ex(PQNode parent_ptr, 
                                PQNode lchild_ptr, 
@@ -60,9 +60,11 @@ uint32 compute_relative_distance_from_child_to_parent(PQNode child_ptr,
 												 	  PQNode parent_ptr,
 												 	  uchar	rorl);
 
-void deal_with_node_index(PQNode qnode_ptr, 
-                          uchar *lvl_ctr_ptr,
-                          PDATA_ELEM de_array, 
-                          int de_array_len);
+void deal_with_interior_nodes_pageno_ex(PQNode parent_ptr, 
+                          PQNode lchild_ptr, 
+                          PQNode rchild_ptr);
+
+void update_mht_block_index_info(int of_fd, 
+                                 PQNode qnode_ptr);
 
 #endif

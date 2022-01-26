@@ -206,9 +206,9 @@ void buildMHTFile(){
 	}
 
 	// Moving file pointer to 128th bytes to 
-	// reserve space for header block (root node)
+	// reserve space for header block
 	if(fo_locate_mht_pos(g_mhtFileFD, MHT_HEADER_LEN, SEEK_CUR) < 0) {
-		debug_print("buildMHTFile", "Reserving space for root node failed!");
+		debug_print("buildMHTFile", "Reserving space for MHT file header failed!");
 		return;
 	}
 
@@ -1512,6 +1512,51 @@ int find_the_first_leaf_splymt_block_by_offset(int fd, int offset) {
 	return -1;	// no proper block is found
 }
 
+void print_mht_block(uchar *mht_block_buf, uint32 mht_blk_buffer_len){
+	const char* THIS_FUNC_NAME = "print_mht_block";
+	char *out_str = NULL;
+	int out_str_len = HASH_LEN * 2 + 1;
+
+	if(!mht_block_buf){
+		check_pointer_ex(mht_block_buf, "mht_block_buf", THIS_FUNC_NAME, "null mht_block_buf");
+		return;
+	}
+
+	if(mht_blk_buffer_len <= 0){
+		debug_print(THIS_FUNC_NAME, "invalid mht_blk_buffer_len");
+		return;
+	}
+
+	out_str = (char*) malloc (out_str_len);
+	memset(out_str, 0, out_str_len);
+	convert_hash_to_string((BYTE*)(mht_block_buf + MHT_BLOCK_OFFSET_HASH), out_str, out_str_len);
+
+	printf("=========================================================================================================================\n");
+	printf("|PN\t|NL\t|HASH\t\t\t\t\t\t\t\t|ISN\t|IZN\t|LCPN\t|LCOS\t|RCPN\t|RCOS\t|PPN\t|POS\t|RSVD|\n");
+	printf("|-----------------------------------------------------------------------------------------------------------------------|\n");
+	printf("|");
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_PAGENO));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_LEVEL));
+	printf("%s|", out_str); free(out_str);
+	printf("%d\t|", *(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_ISN));
+	printf("%d\t|", *(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_IZN));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_LCPN));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_LCOS));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_RCPN));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_RCOS));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_PPN));
+	printf("%d\t|", *(int*)(mht_block_buf + MHT_BLOCK_OFFSET_POS));
+	printf("\t%c%c%c%c|\n", 
+		*(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_RSVD),
+		*(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_RSVD + 1),
+		*(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_RSVD + 2),
+		*(uchar*)(mht_block_buf + MHT_BLOCK_OFFSET_RSVD + 3)
+	);
+	printf("=========================================================================================================================\n");
+
+	return;
+}
+
 void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset)
 {
 	//存放左右孩子对应信息
@@ -1883,6 +1928,7 @@ int extentTheMHT(int fd)
     freeMHTFileHeader(&mhtfilehdr_ptr);
     return supplementaryNode_offset;
 }
+
 /*----------  File Operation Functions  ------------*/
 
 int fo_create_mhtfile(const char *pathname){
@@ -2089,7 +2135,6 @@ ssize_t fo_update_mht_block2(int fd,
 }
 
 
-
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
 	if(fd < 0){
 		debug_print("fo_update_mht_header_block", "Invalid fd");
@@ -2098,6 +2143,69 @@ off_t fo_locate_mht_pos(int fd, off_t offset, int whence){
 
 	return lseek(fd, offset, whence);
 }
+
+off_t fo_search_mht_block_by_block_info(int fd,
+                            PMHT_BLOCK mhtblk_ptr){
+	return 0;
+}
+
+off_t fo_search_mht_block_by_qnode_info(int fd,
+                            PQNode qnode_ptr){
+	// we suppose that the file pointer is at the end of the file,
+	// and the searching will proceed backwards (to the file header). 
+	const char* THIS_FUNC_NAME = "fo_search_mht_block_by_qnode_info";
+	uchar *mht_block_buf = NULL;
+	uint32 mht_block_buf_len = MHT_BLOCK_SIZE;
+	off_t fp_pos = 0;
+
+	if(!qnode_ptr){
+		check_pointer_ex(qnode_ptr, "qnode_ptr", THIS_FUNC_NAME, "null qnode_ptr");
+		return 0;
+	}
+
+	if(fd < 0) {
+		debug_print(THIS_FUNC_NAME, "invalid file handler fd");
+		return 0;
+	}
+
+	mht_block_buf = (uchar*) malloc (MHT_BLOCK_SIZE);
+	memset(mht_block_buf, 0, MHT_BLOCK_SIZE);
+
+	while((fp_pos = fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR)) >= MHT_HEADER_LEN){
+		fo_read_mht_block2(fd, mht_block_buf, mht_block_buf_len, 0, SEEK_CUR);
+		if(compare_two_hashes(qnode_ptr->m_MHTNode_ptr->m_hash, (char*)(mht_block_buf+MHT_BLOCK_OFFSET_HASH))){
+			// block found
+			// NOTE: now the file pointer is at the end of the block
+			return fp_pos;
+		}
+		fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
+	}
+
+	// not found
+	return 0;
+}
+
+void fo_print_mht_block(int fd, int whence){
+	uchar *buffer_ptr = NULL;
+	uint32 buffer_len = 0;
+	uint32 bytes_read = 0;
+
+	if(fd < 0){
+		debug_print("fo_print_mht_block", "Invalid fd");
+		return;
+	}
+
+	buffer_ptr = (uchar*) malloc (MHT_BLOCK_SIZE);
+	memset(buffer_ptr, 0, MHT_BLOCK_SIZE);
+	buffer_len = MHT_BLOCK_SIZE;
+
+	bytes_read = fo_read_mht_block2(fd, buffer_ptr, buffer_len, 0, whence);
+	print_mht_block(buffer_ptr, buffer_len);
+
+	free(buffer_ptr);
+
+	return;
+}	
 
 int fo_close_mhtfile(int fd){
 	return close(fd);

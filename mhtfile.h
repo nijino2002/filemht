@@ -368,7 +368,7 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
 void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
 
 /**
- * @brief      Determines whether the specified offset is valid offset in MHT block buffer.
+ * @brief      Determines whether the specified offset is a valid attribute offset in MHT block buffer.
  *
  * @param[in]  offset  The given offset in MHT block buffer.
  *
@@ -386,6 +386,7 @@ bool is_valid_offset_in_mht_block_buffer(uint32 offset);
  */
 int find_the_first_leaf_splymt_block_by_offset(int fd, int offset);
 
+void print_mht_block(uchar *mht_block_buf, uint32 mht_blk_buffer_len);
 
 /*
 计算父节点哈希值
@@ -513,6 +514,14 @@ ssize_t fo_update_mht_block2(int fd,
                             int whence);
 
 off_t fo_locate_mht_pos(int fd, off_t offset, int whence);
+
+off_t fo_search_mht_block_by_block_info(int fd,
+                            PMHT_BLOCK mhtblk_ptr);
+
+off_t fo_search_mht_block_by_qnode_info(int fd,
+                            PQNode qnode_ptr);
+
+void fo_print_mht_block(int fd, int whence);
 
 int fo_close_mhtfile(int fd);
 

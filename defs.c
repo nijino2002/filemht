@@ -40,6 +40,24 @@ void println(){
 	return;
 }
 
+char* generate_random_string(int str_len){
+	char *tmp_str = NULL;
+	int i = 0;
+
+	if(str_len <= 0)
+		return NULL;
+
+	tmp_str = (char*) malloc (str_len);
+	memset(tmp_str, 0, str_len);
+
+	for(i = 0; i < str_len; i++){
+		srand((uint32)time(NULL));
+		tmp_str[i] = ASCII_A_POS + rand() % 26;
+	}
+
+	return tmp_str;
+}
+
 void check_pointer(void* ptr, const char *ptr_name) {
 	if(!ptr){
 		printf("Pointer %s is NULL.\n", ptr_name);
