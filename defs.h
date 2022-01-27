@@ -71,6 +71,8 @@ void println();
 
 char* generate_random_string(int str_len);
 
+uint32 is_power_of_2(int d);
+
 /*
 Checking whether a pointer is NULL.
 Parameters:

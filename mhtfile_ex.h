@@ -3,6 +3,8 @@
 
 #include "mhtfile.h"
 
+typedef uint32 (*extend_func)(char* file_name, uint32 d_block_size, uint32 data_block_num);
+
 /****************************************************************
  *	   BEGIN: Data  Element: Definition & Operations
 *****************************************************************/
@@ -37,6 +39,7 @@ void de_free(PDATA_ELEM pelem, free_func pfree);
  */
 void buildMHTFileTest_ex(int fd, PDATA_ELEM de_array, int de_array_len);
 
+uint32 extendSupplementaryBlock4MHTFile(char* file_name, uint32 data_block_size, uint32 data_block_num, extend_func extFuncPtr);
 
 /****************************************************************
  *	                Help Functions
@@ -66,5 +69,9 @@ void deal_with_interior_nodes_pageno_ex(PQNode parent_ptr,
 
 void update_mht_block_index_info(int of_fd, 
                                  PQNode qnode_ptr);
+
+uint32 scan_mht_file_data_blocks(char* indata_file_name, 
+                                 uint32 data_block_size);
+
 
 #endif

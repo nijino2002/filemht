@@ -51,11 +51,14 @@ char* generate_random_string(int str_len){
 	memset(tmp_str, 0, str_len);
 
 	for(i = 0; i < str_len; i++){
-		srand((uint32)time(NULL));
 		tmp_str[i] = ASCII_A_POS + rand() % 26;
 	}
 
 	return tmp_str;
+}
+
+uint32 is_power_of_2(int d){
+	return (d & d -1);
 }
 
 void check_pointer(void* ptr, const char *ptr_name) {

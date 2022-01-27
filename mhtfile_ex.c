@@ -66,6 +66,17 @@ void buildMHTFileTest_ex(int fd, PDATA_ELEM de_array, int de_array_len){
 	return;
 }
 
+uint32 extendSupplementaryBlock4MHTFile(char* file_name, 
+									uint32 data_block_size, 
+									uint32 data_block_num, 
+									extend_func extFuncPtr){
+	const char* THIS_FUNC_NAME = "extendSupplementaryBlock4MHTFile";
+
+	return extFuncPtr(file_name, 
+					  data_block_size,
+					  data_block_num);
+}
+
 
 /****************************************************************
  *                   Helper Functions
@@ -380,4 +391,35 @@ void update_mht_block_index_info(int of_fd,
 	free(mht_block_buffer);
 
 	return;
+}
+
+uint32 scan_mht_file_data_blocks(char* indata_file_name, 
+                                 uint32 data_block_size){
+	const char* THIS_FUNC_NAME = "scan_mht_file_data_blocks";
+	int fd = -1;
+	off_t f_size = 0;
+	int data_block_num = 0;
+
+	if(!indata_file_name) {
+		check_pointer_ex(indata_file_name, "indata_file_name", THIS_FUNC_NAME, "null mht_file_name");
+		return 0;
+	}
+
+	if(data_block_size <= 0){
+		debug_print(THIS_FUNC_NAME, "invalid data_block_size");
+		return 0;
+	}
+
+	if((fd = fo_open_mhtfile(indata_file_name)) < 0){
+		debug_print(THIS_FUNC_NAME, "open file failed");
+		return 0;
+	}
+
+	f_size = fo_locate_mht_pos(fd, 0, SEEK_END);
+	// printf("file size: %d\n", (int)f_size);
+	data_block_num = (int)f_size / data_block_size;
+
+	fo_close_mhtfile(fd);
+
+	return data_block_num;
 }
