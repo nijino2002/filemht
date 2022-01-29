@@ -55,6 +55,20 @@ void generateHashByPageNo_SHA256(int page_no, char *buf, uint32 buf_len){
 	return;
 }
 
+void generateHashByBuffer_SHA256(char *in_buf, uint32 in_buf_len, char *buf, uint32 buf_len){
+	if(!in_buf || !buf || buf_len < SHA256_BLOCK_SIZE){
+		printf("in_buf and buf cannot be NULL and buf_len must larger than 32 bytes.\n");
+		return;
+	}
+
+	SHA256_CTX ctx;
+	sha256_init(&ctx);
+	sha256_update(&ctx, in_buf, in_buf_len);
+	sha256_final(&ctx, buf);
+
+	return;
+}
+
 void generateCombinedHash_SHA256(char *hash1, char *hash2, char *buf, uint32 buf_len){
 	char tmp_buf[SHA256_BLOCK_SIZE * 2 + 1] = {0};
 

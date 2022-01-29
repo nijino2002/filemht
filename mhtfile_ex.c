@@ -82,9 +82,7 @@ uint32 extendSupplementaryBlock4MHTFile(char* file_name,
  *                   Helper Functions
 *****************************************************************/
 
-void process_all_elem(int fd_mht, 
-					  int fd_data,
-					  PQNode *pQHeader, 
+void process_all_elem(PQNode *pQHeader, 
 					  PQNode *pQ, 
 					  PDATA_ELEM de_array, 
 					  int de_array_len){
@@ -156,6 +154,110 @@ void process_all_elem(int fd_mht,
 	fo_close_mhtfile(out_file_fd);
 }
 
+void process_all_elem_fv(char* in_data_file,
+                         char* out_mht_file,
+                         PQNode *pQHeader,
+                         PQNode *pQ,
+                         uint32 in_data_block_size,
+                         bool is_indata_hashed){
+	const char* THIS_FUNC_NAME = "process_all_elem_fv";
+	char *tmp_hash_buffer = NULL;
+	int i = 0;
+	PQNode qnode_ptr = NULL;
+	PQNode cbd_qnode_ptr = NULL;
+	PQNode popped_qnode_ptr = NULL;
+	PQNode lchild_ptr = NULL;
+	PQNode rchild_ptr = NULL;
+	PMHTNode mhtnode_ptr = NULL;
+	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
+	int in_file_fd = -1;
+	int out_file_fd = -1;
+	uint32 bytes_read = 0;
+	char* read_buffer = NULL;
+
+	if(*pQHeader != NULL && *pQ != NULL)
+		freeQueue(pQHeader, pQ);
+	else if(*pQHeader){
+		freeQueue2(pQHeader);
+	}
+	else if(*pQ){
+		freeQueue3(pQ);
+	}
+	else{	// both of g_pQHeader and g_pQ are NULL
+		;	// do nothing
+	}
+
+	set_mhtFileRootNodeOffset(UNASSIGNED_OFFSET);
+	set_mhtFirstSplymtLeafOffset(UNASSIGNED_OFFSET);
+	set_isEncounterFSLO(FALSE);
+
+	in_file_fd = fo_open_mhtfile(in_data_file);
+	if(in_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "open in-data-file failed");
+		return;
+	}
+	out_file_fd = fo_create_mhtfile(out_mht_file);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "create out-mht-file failed");
+		return;
+	}
+
+	read_buffer = (char*) malloc (in_data_block_size);
+	memset(read_buffer, 0, in_data_block_size);
+	tmp_hash_buffer = (char*) malloc (SHA256_BLOCK_SIZE);
+	memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+
+	// Moving file pointer to the 128th bytes to 
+	// reserve space for header block
+	if(fo_locate_mht_pos(out_file_fd, MHT_HEADER_LEN, SEEK_CUR) < 0) {
+		debug_print(THIS_FUNC_NAME, "Reserving space for MHT file header failed!");
+		return;
+	}
+
+	// Initializing MHT file header
+	// Header will be updated at the end of building MHT file
+	mht_file_header_ptr = makeMHTFileHeader();
+
+	initQueue(pQHeader, pQ);
+	check_pointer((void*)*pQHeader, "pQHeader");
+	check_pointer((void*)*pQ, "pQ");
+
+	while((bytes_read = read(in_file_fd, read_buffer, in_data_block_size)) > 0){
+		combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
+
+		// making new node and enqueue
+		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+		if(is_indata_hashed){
+			memcpy(tmp_hash_buffer, (char*)(read_buffer + sizeof(int)), SHA256_BLOCK_SIZE);
+		}
+		else {	// hash indata
+			generateHashByBuffer_SHA256((char*)(read_buffer + sizeof(int)), bytes_read, tmp_hash_buffer, SHA256_BLOCK_SIZE);
+		}	
+		mhtnode_ptr = makeMHTNode(*(int*)read_buffer, tmp_hash_buffer); 
+		check_pointer_ex((void*)mhtnode_ptr, "mhtnode_ptr", THIS_FUNC_NAME, "null mhtnode_ptr");
+		qnode_ptr = makeQNode(mhtnode_ptr, NODELEVEL_LEAF); 
+		check_pointer_ex((void*)qnode_ptr, "qnode_ptr", THIS_FUNC_NAME, "null qnode_ptr");
+		enqueue(pQHeader, pQ, qnode_ptr);
+		memset(read_buffer, 0, in_data_block_size);
+	}
+
+	// deal with the nodes remained in the queue
+	combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
+	// dequeue the root node
+	popped_qnode_ptr = dequeue(pQHeader, pQ);
+	print_qnode_info(popped_qnode_ptr);
+	popped_qnode_ptr->m_is_written = TRUE;
+	deleteQNode(&popped_qnode_ptr);
+
+	println();
+	printQueue(*pQHeader);
+
+	freeQueue(pQHeader, pQ);
+	free(tmp_hash_buffer);
+	free(read_buffer);
+	fo_close_mhtfile(out_file_fd);
+}
+
 void combine_nodes_with_same_levels(PQNode *pQHeader, 
                                     PQNode *pQ, int of_fd){
 	const char* THIS_FUNC_NAME = "combine_nodes_with_same_levels";
@@ -193,6 +295,14 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			print_qnode_info(popped_qnode_ptr); println();
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
+			// record the offset of the first supplementary leaf node
+			if(!get_isEncounterFSLO() && 
+				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
+				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
+				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
+				set_isEncounterFSLO(TRUE);
+			}
+
 			fo_update_mht_block2(of_fd, 
 							 mht_block_buffer,
 							 mht_block_buffer_len,
@@ -214,6 +324,14 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			print_qnode_info(popped_qnode_ptr); println();
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
+			// record the offset of the first supplementary leaf node
+			if(!get_isEncounterFSLO() && 
+				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
+				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
+				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
+				set_isEncounterFSLO(TRUE);
+			}
+			
 			fo_update_mht_block2(of_fd, 
 							 mht_block_buffer,
 							 mht_block_buffer_len,
@@ -228,24 +346,6 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 				update_mht_block_index_info(of_fd, popped_qnode_ptr);
 			}
 		}
-		/*
-		popped_qnode_ptr = dequeue_sppos(pQHeader, pQ, tmp_node_ptr);
-		// update index info. of the corresponding block in the MHT file
-		if(popped_qnode_ptr->m_level > NODELEVEL_LEAF && popped_qnode_ptr->m_is_written){
-			update_mht_block_index_info(of_fd, popped_qnode_ptr);
-		}
-		!popped_qnode_ptr->m_is_written ? print_qnode_info(popped_qnode_ptr) : nop();
-		println();
-		popped_qnode_ptr->m_is_written = TRUE;
-		memset(mht_block_buffer, 0, mht_block_buffer_len);
-		qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
-		fo_update_mht_block2(of_fd, 
-							 mht_block_buffer,
-							 mht_block_buffer_len,
-							 0,
-							 SEEK_CUR);
-		deleteQNode(&popped_qnode_ptr);
-		*/
 
 		if(!(*pQ)->m_is_written){
 			print_qnode_info(*pQ); println();
@@ -258,18 +358,6 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 							 0,
 							 SEEK_CUR);
 		}
-		/*
-		!(*pQ)->m_is_written ? print_qnode_info(*pQ) : nop();
-		println();
-		(*pQ)->m_is_written = TRUE;
-		memset(mht_block_buffer, 0, mht_block_buffer_len);
-		qnode_to_mht_buffer(*pQ, &mht_block_buffer, mht_block_buffer_len);
-		fo_update_mht_block2(of_fd, 
-							 mht_block_buffer,
-							 mht_block_buffer_len,
-							 0,
-							 SEEK_CUR);
-		*/
 
 		printQueue(*pQHeader);
 		bCombined = FALSE;

@@ -1,7 +1,7 @@
 #include "mhtfile_ex.h"
 
 #define INDATA_FILENAME	"./indata_orig.dat"
-#define INDATA_EXT_FILENAME	"./indata_ext_orig.dat"
+#define OUT_MHT_FILENAME	"./out_mht_file.mf"
 
 void generate_indata_file_orig(int data_block_num,
 							   int string_len);
@@ -31,17 +31,26 @@ int main(int argc, char const *argv[])
 	if(is_power_of_2(get_data_block_num) != 0){
 		extendSupplementaryBlock4MHTFile(INDATA_FILENAME,
 										data_block_size,
-										16-data_block_num,
+										cal_the_least_pow2_to_n(data_block_num) - data_block_num,
 										extend_indata_file);
 	}
+	printf("After extension, the number of data block: %d\n", cal_the_least_pow2_to_n(data_block_num));
 
+	/*
 	de_ary = (PDATA_ELEM) malloc(sizeof(DATA_ELEM) * n);
 	for(i = 0; i < n; i ++){
 		de_init(&de_ary[i]);
 		de_ary[i].m_index = i + 1;
 	}
+	process_all_elem(&pQHdr, &pQTail, de_ary, n);
+	*/
+	process_all_elem_fv(INDATA_FILENAME,
+						OUT_MHT_FILENAME,
+						&pQHdr,
+						&pQTail,
+						data_block_size,
+						FALSE);
 
-	process_all_elem(0, 0, &pQHdr, &pQTail, de_ary, n);
 
 	return 0;
 }

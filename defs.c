@@ -28,6 +28,7 @@ int g_mhtFileFD = MHT_INVALID_FILE_DSCPT;		// file descriptor for the MHT file
 int g_mhtFileFdRd = MHT_INVALID_FILE_DSCPT;		// file descriptor only for reading the MHT file
 uint32 g_mhtFileRootNodeOffset = UNASSIGNED_OFFSET;	// root node offset (in byte)
 uint32 g_mhtFirstSplymtLeafOffset = UNASSIGNED_OFFSET;	// offset of the first supplementary leaf node (in byte)
+bool g_isEncounterFSLO = FALSE;
 uint32 g_mhtFileFSLO = UNASSIGNED_OFFSET;	// first supplementary leaf offset (in byte)
 
 void nop() {
@@ -59,6 +60,10 @@ char* generate_random_string(int str_len){
 
 uint32 is_power_of_2(int d){
 	return (d & d -1);
+}
+
+uint32 cal_the_least_pow2_to_n(uint32 n){
+	return (uint32)pow(2,(int)ceil(log10(n)/log10(2)));
 }
 
 void check_pointer(void* ptr, const char *ptr_name) {
@@ -101,4 +106,31 @@ void print_buffer_in_byte_hex( uchar *buf, uint32 buf_len){
 		printf("%#04x  ", buf[i]);
 	}
 	printf("\n");
+}
+
+/****************************************************************
+ *                Get/Set Functions for Global Variables
+*****************************************************************/
+uint32 get_mhtFileRootNodeOffset(){
+	return g_mhtFileRootNodeOffset;
+}
+
+uint32 get_mhtFirstSplymtLeafOffset(){
+	return g_mhtFirstSplymtLeafOffset;
+}
+
+bool get_isEncounterFSLO(){
+	return g_isEncounterFSLO;
+}
+
+void set_mhtFileRootNodeOffset(uint32 rno){
+	g_mhtFileRootNodeOffset = rno;
+}
+
+void set_mhtFirstSplymtLeafOffset(uint32 fslo){
+	g_mhtFirstSplymtLeafOffset = fslo;
+}
+
+void set_isEncounterFSLO(bool is_enc_fslo){
+	g_isEncounterFSLO = is_enc_fslo;
 }

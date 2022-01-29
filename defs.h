@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #define MAX_SIGNED_INT  0x7fffffff
 #define MAX_UNSIGNED_INT    0xffffffff
@@ -56,6 +57,7 @@ extern const uchar g_zeroHash[HASH_LEN];	// firstly defined in defs.c
 extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];		// firstly defined in defs.c
 extern uint32 g_mhtFileRootNodeOffset;		// firstly defined in defs.c
 extern uint32 g_mhtFirstSplymtLeafOffset;		// firstly defined in defs.c
+extern bool g_isEncounterFSLO;      // firstly defined in defs.c
 extern int g_mhtFileFD;		// firstly defined in defs.c
 extern int g_mhtFileFdRd;      // firstly defined in defs.c
 
@@ -72,6 +74,16 @@ void println();
 char* generate_random_string(int str_len);
 
 uint32 is_power_of_2(int d);
+
+/**
+ * @brief      Calculating a minimal integer 
+ *  that is the integer power of 2 and larger than n
+ *
+ * @param[in]  n     { The given integer }
+ *
+ * @return     { The calculated minimal integer }
+ */
+uint32 cal_the_least_pow2_to_n(uint32 n);
 
 /*
 Checking whether a pointer is NULL.
@@ -113,3 +125,21 @@ void debug_print(const char *from, const char *dbg_msg);
 void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
 
 #endif
+
+
+/****************************************************************
+ *                Get/Set Functions for Global Variables
+*****************************************************************/
+// extern uint32 g_mhtFileRootNodeOffset;      // firstly defined in defs.c
+// extern uint32 g_mhtFirstSplymtLeafOffset;       // firstly defined in defs.c
+uint32 get_mhtFileRootNodeOffset();
+
+uint32 get_mhtFirstSplymtLeafOffset();
+
+bool get_isEncounterFSLO();
+
+void set_mhtFileRootNodeOffset(uint32 rno);
+
+void set_mhtFirstSplymtLeafOffset(uint32 fslo);
+
+void set_isEncounterFSLO(bool is_enc_fslo);

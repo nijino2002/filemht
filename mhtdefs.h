@@ -55,6 +55,8 @@ Return:
 */
 void generateHashByPageNo_SHA256(int page_no, char *buf, uint32 buf_len);
 
+void generateHashByBuffer_SHA256(char *in_buf, uint32 in_buf_len, char *buf, uint32 buf_len);
+
 /*
 Generating a hash by combining two given hashes with SHA256 algorithm
 Parameter:

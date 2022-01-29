@@ -45,12 +45,17 @@ uint32 extendSupplementaryBlock4MHTFile(char* file_name, uint32 data_block_size,
  *	                Help Functions
 *****************************************************************/
 
-void process_all_elem(int fd_mht, 
-                      int fd_data, 
-                      PQNode *pQHeader, 
+void process_all_elem(PQNode *pQHeader, 
                       PQNode *pQ, 
                       PDATA_ELEM de_array, 
                       int de_array_len);
+
+void process_all_elem_fv(char* in_data_file,
+                         char* out_mht_file,
+                         PQNode *pQHeader,
+                         PQNode *pQ,
+                         uint32 in_data_block_size,
+                         bool is_indata_hashed);
 
 void combine_nodes_with_same_levels(PQNode *pQHeader, 
                                     PQNode *pQ, int of_fd);
