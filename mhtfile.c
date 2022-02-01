@@ -2172,16 +2172,24 @@ off_t fo_search_mht_block_by_qnode_info(int fd,
 	memset(mht_block_buf, 0, MHT_BLOCK_SIZE);
 
 	while((fp_pos = fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR)) >= MHT_HEADER_LEN){
+		//printf("FP_POS: %d\n", fp_pos);
 		fo_read_mht_block2(fd, mht_block_buf, mht_block_buf_len, 0, SEEK_CUR);
+		//print_hash_value(qnode_ptr->m_MHTNode_ptr->m_hash);
+		//println();println();
+		//print_hash_value((char*)(mht_block_buf+MHT_BLOCK_OFFSET_HASH));
+		//println();println();
 		if(compare_two_hashes(qnode_ptr->m_MHTNode_ptr->m_hash, (char*)(mht_block_buf+MHT_BLOCK_OFFSET_HASH))){
 			// block found
 			// NOTE: now the file pointer is at the end of the block
+			mht_block_buf ? free(mht_block_buf) : nop();
+			printf("BLOCK FOUND! FP_POS: %ld\n", fp_pos);
 			return fp_pos;
 		}
 		fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
 	}
 
 	// not found
+	mht_block_buf ? free(mht_block_buf) : nop();
 	return 0;
 }
 
@@ -2269,4 +2277,10 @@ void fo_printMHTFile(int fd)
         printf("pgno:%d\t level: %d\t ppgno:%d\t  lpgno:%d\t rpgno:%d\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_nodeLevel, tmpblk_ptr->m_parentPageNo, tmpblk_ptr->m_lChildPageNo, tmpblk_ptr->m_rChildPageNo);
 		//printf("pgno:%d\t ISN: %hhu\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_isSupplementaryNode);
     }
+
+    // output root block
+    memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+    fo_read_mht_block2(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+    unserialize_mht_block(mhtblk_buffer,  MHT_BLOCK_SIZE, &tmpblk_ptr);
+    printf("pgno:%d\t level: %d\t ppgno:%d\t  lpgno:%d\t rpgno:%d\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_nodeLevel, tmpblk_ptr->m_parentPageNo, tmpblk_ptr->m_lChildPageNo, tmpblk_ptr->m_rChildPageNo);
 }

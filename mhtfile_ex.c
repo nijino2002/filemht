@@ -174,6 +174,7 @@ void process_all_elem_fv(char* in_data_file,
 	int out_file_fd = -1;
 	uint32 bytes_read = 0;
 	char* read_buffer = NULL;
+	uchar* mhthdr_buffer = NULL;
 
 	if(*pQHeader != NULL && *pQ != NULL)
 		freeQueue(pQHeader, pQ);
@@ -199,6 +200,13 @@ void process_all_elem_fv(char* in_data_file,
 	out_file_fd = fo_create_mhtfile(out_mht_file);
 	if(out_file_fd < 0){
 		debug_print(THIS_FUNC_NAME, "create out-mht-file failed");
+		return;
+	}
+	fo_close_mhtfile(out_file_fd);
+	//re-open output file for write/read
+	out_file_fd = fo_open_mhtfile(out_mht_file);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "re-open out-mht-file failed");
 		return;
 	}
 
@@ -243,11 +251,23 @@ void process_all_elem_fv(char* in_data_file,
 
 	// deal with the nodes remained in the queue
 	combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
-	// dequeue the root node
+	// process the root node
 	popped_qnode_ptr = dequeue(pQHeader, pQ);
-	print_qnode_info(popped_qnode_ptr);
-	popped_qnode_ptr->m_is_written = TRUE;
-	deleteQNode(&popped_qnode_ptr);
+	if(popped_qnode_ptr->m_is_written && 
+		popped_qnode_ptr->m_level > NODELEVEL_LEAF){
+		set_mhtFileRootNodeOffset(fo_locate_mht_pos(out_file_fd, 0, SEEK_END) - MHT_BLOCK_SIZE);
+		print_qnode_info(popped_qnode_ptr);
+		deleteQNode(&popped_qnode_ptr);
+	}
+
+	/***** Updating MHT file header *****/
+	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	if(mht_file_header_ptr && mhthdr_buffer){
+		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;
+		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(out_file_fd, mhthdr_buffer, MHT_HEADER_LEN);
+	}
 
 	println();
 	printQueue(*pQHeader);
@@ -255,6 +275,8 @@ void process_all_elem_fv(char* in_data_file,
 	freeQueue(pQHeader, pQ);
 	free(tmp_hash_buffer);
 	free(read_buffer);
+	free(mhthdr_buffer);
+	freeMHTFileHeader(&mht_file_header_ptr);
 	fo_close_mhtfile(out_file_fd);
 }
 
@@ -295,12 +317,25 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			print_qnode_info(popped_qnode_ptr); println();
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
+			/*
 			// record the offset of the first supplementary leaf node
 			if(!get_isEncounterFSLO() && 
 				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
 				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
 				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
 				set_isEncounterFSLO(TRUE);
+			}*/
+			if(popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
+				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
+				// mark the supplementary leaf node
+				popped_qnode_ptr->m_is_supplementary_node = TRUE;
+				popped_qnode_ptr->m_is_zero_node = TRUE;
+				// record the offset of the first supplementary leaf node
+				if(!get_isEncounterFSLO())
+				{
+					set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
+					set_isEncounterFSLO(TRUE);
+				}
 			}
 
 			fo_update_mht_block2(of_fd, 
@@ -308,6 +343,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 							 mht_block_buffer_len,
 							 0,
 							 SEEK_CUR);
+			fsync(of_fd);
 			popped_qnode_ptr->m_is_written = TRUE;
 			deleteQNode(&popped_qnode_ptr);
 		}
@@ -315,6 +351,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			// update index info. of the corresponding block in the MHT file
 			if(popped_qnode_ptr->m_level > NODELEVEL_LEAF && popped_qnode_ptr->m_is_written){
 				update_mht_block_index_info(of_fd, popped_qnode_ptr);
+				printf("UPDATED pQ->prev->prev INDEX\n");
 			}
 		}
 
@@ -324,6 +361,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			print_qnode_info(popped_qnode_ptr); println();
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
+			/*
 			// record the offset of the first supplementary leaf node
 			if(!get_isEncounterFSLO() && 
 				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
@@ -331,12 +369,26 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
 				set_isEncounterFSLO(TRUE);
 			}
+			*/
+			if(popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
+				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
+				// mark the supplementary leaf node
+				popped_qnode_ptr->m_is_supplementary_node = TRUE;
+				popped_qnode_ptr->m_is_zero_node = TRUE;
+				// record the offset of the first supplementary leaf node
+				if(!get_isEncounterFSLO())
+				{
+					set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
+					set_isEncounterFSLO(TRUE);
+				}
+			}
 			
 			fo_update_mht_block2(of_fd, 
 							 mht_block_buffer,
 							 mht_block_buffer_len,
 							 0,
 							 SEEK_CUR);
+			fsync(of_fd);
 			popped_qnode_ptr->m_is_written = TRUE;
 			deleteQNode(&popped_qnode_ptr);
 		}
@@ -344,6 +396,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			// update index info. of the corresponding block in the MHT file
 			if(popped_qnode_ptr->m_level > NODELEVEL_LEAF && popped_qnode_ptr->m_is_written){
 				update_mht_block_index_info(of_fd, popped_qnode_ptr);
+				printf("UPDATED pQ->prev INDEX\n");
 			}
 		}
 
@@ -357,6 +410,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 							 mht_block_buffer_len,
 							 0,
 							 SEEK_CUR);
+			fsync(of_fd);
 		}
 
 		printQueue(*pQHeader);
@@ -458,11 +512,17 @@ void update_mht_block_index_info(int of_fd,
 
 	// now, the file pointer is at the end of the file
 	if((blk_offset = fo_search_mht_block_by_qnode_info(of_fd, qnode_ptr)) >= MHT_HEADER_LEN) {
-		if(blk_offset - MHT_HEADER_LEN < 0 || blk_offset - MHT_HEADER_LEN % MHT_BLOCK_SIZE != 0){
+		if(blk_offset - MHT_HEADER_LEN < 0 || (blk_offset - MHT_HEADER_LEN) % MHT_BLOCK_SIZE != 0){
 			debug_print(THIS_FUNC_NAME, "invalid blk_offset, which is not the beginning of the block");
 			return;
 		}
 		memset(mht_block_buffer, 0, mht_block_buffer_len);
+		// after search the matched block, the file pointer is at
+		// the end of the matched block.
+		// both of the following statements are equal
+		fo_locate_mht_pos(of_fd, -MHT_BLOCK_SIZE, SEEK_CUR);
+		//fo_locate_mht_pos(of_fd, blk_offset, SEEK_SET);
+
 		fo_read_mht_block2(of_fd, mht_block_buffer, mht_block_buffer_len, 0, SEEK_CUR);
 		*(int*)(mht_block_buffer + MHT_BLOCK_OFFSET_PAGENO) = qnode_ptr->m_MHTNode_ptr->m_pageNo;
 		*(int*)(mht_block_buffer + MHT_BLOCK_OFFSET_LCPN) = qnode_ptr->m_MHTNode_ptr->m_lchildPageNo;

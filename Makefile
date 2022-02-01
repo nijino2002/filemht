@@ -5,7 +5,8 @@ LIBS = -lm
 
 all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \
-		test_insertpagedisorder test_print_mht_blk
+		test_insertpagedisorder test_print_mht_blk test_output_MHT_file \
+		test_file_buffer
 .PHONY : all
 
 main : main.o $(OBJ)
@@ -38,10 +39,16 @@ test_insertpagedisorder: test_insertpagedisorder.o
 test_print_mht_blk: test_print_mht_blk.o
 	$(CC) -o test_print_mht_blk test_print_mht_blk.o $(OBJ) $(LIBS)
 
+test_output_MHT_file: test_output_MHT_file.o
+	$(CC) -o test_output_MHT_file test_output_MHT_file.o $(OBJ) $(LIBS)
+
+test_file_buffer: test_file_buffer.o
+	$(CC) -o test_file_buffer test_file_buffer.o $(OBJ) $(LIBS)
+
 $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h
 
 .PHONY : clean
 clean : 
 	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht test_insertpagedisorder \
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
-	test_print_mht_blk test_print_mht_blk.o $(OBJ)
+	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o $(OBJ)
