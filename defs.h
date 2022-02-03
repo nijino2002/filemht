@@ -7,6 +7,13 @@
 #include <time.h>
 #include <math.h>
 
+#if (defined __MINGW32__) || (defined __MINGW64__)
+    #include <windows.h>
+    #define bool BOOL
+    #define fsync(fd) (FlushFileBuffers ((HANDLE) _get_osfhandle(fd)) ? 0 : -1)
+#endif
+
+
 #define MAX_SIGNED_INT  0x7fffffff
 #define MAX_UNSIGNED_INT    0xffffffff
 #define UNASSIGNED_INDEX    -1
@@ -51,7 +58,10 @@
 typedef unsigned int uint32;
 typedef unsigned short int uint16;
 typedef unsigned char uchar;
-typedef enum {FALSE, TRUE} bool;
+
+#if (!defined __MINGW32__) && (!defined __MINGW64__)
+    typedef enum {FALSE, TRUE} bool;
+#endif
 
 extern const uchar g_zeroHash[HASH_LEN];	// firstly defined in defs.c
 extern const int g_MhtAttribOffsetArray[MHT_BLOCK_ATRRIB_NUM];		// firstly defined in defs.c
