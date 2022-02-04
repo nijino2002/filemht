@@ -82,12 +82,13 @@ uint32 extendSupplementaryBlock4MHTFile(char* file_name,
  *                   Helper Functions
 *****************************************************************/
 
-void process_all_elem(PQNode *pQHeader, 
+void process_all_elem(char* out_mht_file,
+					  PQNode *pQHeader, 
 					  PQNode *pQ, 
 					  PDATA_ELEM de_array, 
 					  int de_array_len){
 	const char* THIS_FUNC_NAME = "process_all_elem";
-	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
+	char* tmp_hash_buffer = NULL;
 	int i = 0;
 	PQNode qnode_ptr = NULL;
 	PQNode cbd_qnode_ptr = NULL;
@@ -97,6 +98,7 @@ void process_all_elem(PQNode *pQHeader,
 	PMHTNode mhtnode_ptr = NULL;
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
 	int out_file_fd = -1;
+	uchar* mhthdr_buffer = NULL;
 
 	if(*pQHeader != NULL && *pQ != NULL)
 		freeQueue(pQHeader, pQ);
@@ -110,7 +112,25 @@ void process_all_elem(PQNode *pQHeader,
 		;	// do nothing
 	}
 
-	out_file_fd = fo_create_mhtfile("./test_out");
+	set_mhtFileRootNodeOffset(UNASSIGNED_OFFSET);
+	set_mhtFirstSplymtLeafOffset(UNASSIGNED_OFFSET);
+	set_isEncounterFSLO(FALSE);
+
+	out_file_fd = fo_create_mhtfile(out_mht_file);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "create out-mht-file failed");
+		return;
+	}
+	fo_close_mhtfile(out_file_fd);
+	//re-open output file for write/read
+	out_file_fd = fo_open_mhtfile(out_mht_file);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "re-open out-mht-file failed");
+		return;
+	}
+
+	tmp_hash_buffer = (char*) malloc (SHA256_BLOCK_SIZE);
+	memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
 
 	// Moving file pointer to the 128th bytes to 
 	// reserve space for header block
@@ -127,7 +147,7 @@ void process_all_elem(PQNode *pQHeader,
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
 
-	for(i = 0; i < de_array_len; i++){	// i refers to page number
+	for(i = 0; i < de_array_len; i++){
 		combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
 
 		// making new node and enqueue
@@ -141,16 +161,31 @@ void process_all_elem(PQNode *pQHeader,
 	} // for
 
 	combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
-	// dequeue the root node
+	// process the root node
 	popped_qnode_ptr = dequeue(pQHeader, pQ);
-	print_qnode_info(popped_qnode_ptr);
-	popped_qnode_ptr->m_is_written = TRUE;
-	deleteQNode(&popped_qnode_ptr);
+	if(popped_qnode_ptr->m_is_written && 
+		popped_qnode_ptr->m_level > NODELEVEL_LEAF){
+		set_mhtFileRootNodeOffset(fo_locate_mht_pos(out_file_fd, 0, SEEK_END) - MHT_BLOCK_SIZE);
+		print_qnode_info(popped_qnode_ptr);
+		deleteQNode(&popped_qnode_ptr);
+	}
+
+	/***** Updating MHT file header *****/
+	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	if(mht_file_header_ptr && mhthdr_buffer){
+		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;
+		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(out_file_fd, mhthdr_buffer, MHT_HEADER_LEN);
+	}
 
 	println();
 	printQueue(*pQHeader);
 
 	freeQueue(pQHeader, pQ);
+	free(tmp_hash_buffer);
+	free(mhthdr_buffer);
+	freeMHTFileHeader(&mht_file_header_ptr);
 	fo_close_mhtfile(out_file_fd);
 }
 

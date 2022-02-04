@@ -81,8 +81,22 @@ void nop();
  */
 void println();
 
+/**
+ * @brief      Generating a random string with length of str_len
+ *
+ * @param[in]  str_len  The string length
+ *
+ * @return     The generated string (needs to be freed after use)
+ */
 char* generate_random_string(int str_len);
 
+/**
+ * @brief      Determines whether the specified d is an integer power of 2.
+ *
+ * @param[in]  d     the specified d
+ *
+ * @return     True if the specified d is an integer power of 2, False otherwise.
+ */
 uint32 is_power_of_2(int d);
 
 /**
@@ -140,8 +154,6 @@ void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
 /****************************************************************
  *                Get/Set Functions for Global Variables
 *****************************************************************/
-// extern uint32 g_mhtFileRootNodeOffset;      // firstly defined in defs.c
-// extern uint32 g_mhtFirstSplymtLeafOffset;       // firstly defined in defs.c
 uint32 get_mhtFileRootNodeOffset();
 
 uint32 get_mhtFirstSplymtLeafOffset();
