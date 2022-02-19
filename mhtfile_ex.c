@@ -54,16 +54,51 @@ void de_free(PDATA_ELEM pelem, free_func pfree){
  *                       MHT File Operations
 *****************************************************************/
 
-void buildMHTFileTest_ex(int fd, PDATA_ELEM de_array, int de_array_len){
-	if(!check_pointer_ex(de_array, "de_array", "buildMHTFileTest_ex", "null de_array"))
+void buildMHTFileTest_ex(const char* out_mht_filename, PDATA_ELEM de_array, int de_array_len){
+	const char* THIS_FUNC_NAME = "buildMHTFileTest_ex";
+	PQNode pQHdr = NULL;
+	PQNode pQTail = NULL;
+	
+	if(!check_pointer_ex(de_array, "de_array", THIS_FUNC_NAME, "null de_array"))
 		return;
 
 	if(de_array_len <= 0) {
-		debug_print("buildMHTFileTest_ex", "de_array_len cannot be or less than 0");
+		debug_print(THIS_FUNC_NAME, "de_array_len cannot be or less than 0");
 		return;
 	}
 
+	process_all_elem((char*)out_mht_filename,
+					 &pQHdr,
+					 &pQTail,
+					 de_array,
+					 de_array_len);
+
 	return;
+}
+
+void buildMHTFileFv_ex(char* in_data_file,
+                         char* out_mht_file,
+                         uint32 in_data_block_size,
+                         bool is_indata_hashed){
+	const char* THIS_FUNC_NAME = "buildMHTFileFv_ex";
+	PQNode pQHdr = NULL;
+	PQNode pQTail = NULL;
+
+	if(!check_pointer_ex(in_data_file, "in_data_file", THIS_FUNC_NAME, "null in_data_file") ||
+		!check_pointer_ex(out_mht_file, "out_mht_file", THIS_FUNC_NAME, "null out_mht_file"))
+		return;
+
+	if(in_data_block_size <= 0){
+		debug_print(THIS_FUNC_NAME, "in_data_block_size cannot be or less than 0");
+		return;
+	}
+
+	return process_all_elem_fv(in_data_file,
+							   out_mht_file,
+							   &pQHdr,
+							   &pQTail,
+							   in_data_block_size,
+							   is_indata_hashed);
 }
 
 uint32 extendSupplementaryBlock4MHTFile(char* file_name, 

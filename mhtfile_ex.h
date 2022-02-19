@@ -70,11 +70,25 @@ void de_free(PDATA_ELEM pelem, free_func pfree);
 
 /**
  * @brief      Building an MHT file from a given integer array.
- *
+ * 
+ * @param      out_mht_filename  The output MHT file name
  * @param      int_array  The pointer to integer array
  * @param[in]  array_len  Array length
  */
-void buildMHTFileTest_ex(int fd, PDATA_ELEM de_array, int de_array_len);
+void buildMHTFileTest_ex(const char* out_mht_filename, PDATA_ELEM de_array, int de_array_len);
+
+/**
+ * @brief      Building an MHT file from a given file
+ *
+ * @param      in_data_file        In data file
+ * @param      out_mht_file        The out MHT file
+ * @param[in]  in_data_block_size  In data block size
+ * @param[in]  is_indata_hashed    Indicates if in-data is hashed
+ */
+void buildMHTFileFv_ex(char* in_data_file,
+                         char* out_mht_file,
+                         uint32 in_data_block_size,
+                         bool is_indata_hashed);
 
 /**
  * @brief      Extending an MHT file with supplementary blocks
