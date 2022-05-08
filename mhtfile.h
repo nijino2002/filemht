@@ -118,7 +118,7 @@ int initOpenMHTFileWR(uchar *pathname);
 PMHT_FILE_HEADER readMHTFileHeader(int fd);
 
 /**
- * @brief      Searching the corresponding page block in MHT file based on given page number.
+ * @brief      Searching the corresponding page block in MHT file based on a given page number.
  *
  * @param[in]  fd       The file descriptor.
  * @param[in]  page_no  The page number

@@ -800,6 +800,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
     mhtblk_ptr = searchPageByNo(fd,page_no);
 	fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
     read_offset = write_offset = lseek(fd, 0, SEEK_CUR);
+    
     //如果页面已存在，则进行更新操作
     //If the page already exists, perform the update operation
     if(mhtblk_ptr){
