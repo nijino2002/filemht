@@ -812,9 +812,10 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
             return -1;
         }
         freeMHTBlock(&mhtblk_ptr);
+        fo_close_mhtfile(fd);
         return 0;
     }
-	fo_close_mhtfile(fd);
+    fo_close_mhtfile(fd);
 	
 	fd = MHT_INVALID_FILE_DSCPT;
     //如果页面不存在，进行插入操作
@@ -843,12 +844,12 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
     printf("rootNodeOffset :%d  supplementaryNode_offset: %d\n", read_rootNodeOffset, supplementaryNode_offset);
 
     ////If there is no place to insert, extend the MHT
-    if(supplementaryNode_offset == 0)
+    if(supplementaryNode_offset == UNASSIGNED_OFFSET)
     {
         supplementaryNode_offset = extentTheMHT(new_fd);
 		write_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
 		mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
-		mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
+		mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? UNASSIGNED_OFFSET : supplementaryNode_offset;
 		serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
 		fo_update_mht_file_header(new_fd, mhthdr_buffer, MHT_HEADER_LEN);
 		//printf("rootNodeOffset :%d  supplementaryNode_offset: %d\n", write_rootNodeOffset, supplementaryNode_offset);
@@ -898,13 +899,13 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
         {
             memset(write_block_buf, 0, MHT_BLOCK_SIZE);
             write_offset += MHT_BLOCK_SIZE;
-            if(write_offset == write_rootNodeOffset)
+            if(write_offset >= write_rootNodeOffset)
             {
                 break;
             }
             fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
         }
-		if(write_offset == write_rootNodeOffset)
+		if(write_offset >= write_rootNodeOffset)
         {
             break;
         }
