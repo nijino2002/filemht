@@ -1,7 +1,7 @@
 /**
  * @defgroup   Performance Evaluations
  *
- * @brief      This file implements the performance evaluation on building MHT in MMCS version.
+ * @brief      This file implements the performance evaluation on building MHT in MMSV version.
  *
  * @author     Lu Di
  * @date       2022.05.20
@@ -25,35 +25,45 @@ int main(int argc, char const *argv[])
     uint32 data_block_num = 10;
     uint32 get_data_block_num = 0;
     uint32 string_len = 10;
+    uint32 choice = 0;
 
-    for (i = 0; i < DS_ARRAY_LEN; i++){
-        data_block_num = DATA_BLOCK_NUM_ARRAY[i];
-        string_len = STRING_LENGTH;
+    if(argc < 2){
+        printf("Usage: %s [choice]\n", argv[0]);
+        return 0;
+    }
 
-        printf("%d. Building MHT with %d-block dataset...\n", i+1, DATA_BLOCK_NUM_ARRAY[i]);
-        printf("\t Dataset file name: %s\n", DATASET_FILENAME_ARRAY[i]);
-        data_block_size = sizeof(uint32) + string_len;
-        get_data_block_num = scan_mht_file_data_blocks((char*)DATASET_FILENAME_ARRAY[i], data_block_size);
-        printf("Number of data block: %d\n", get_data_block_num);
-        printf("Is power of 2: %d\n", is_power_of_2(get_data_block_num));
+    choice = atoi(argv[1]);
+    if(choice < 0 || choice >= DS_ARRAY_LEN){
+        printf("choice should be between 0 to 11.\n");
+        return 0;
+    }
 
-        if(is_power_of_2(get_data_block_num) != 0){
-            extendSupplementaryBlock4MHTFile((char*)DATASET_FILENAME_ARRAY[i],
-                                            data_block_size,
-                                            cal_the_least_pow2_to_n(data_block_num) - data_block_num,
-                                            extend_indata_file);
-        }
-        printf("After extension, the number of data block: %d\n", cal_the_least_pow2_to_n(data_block_num));
+    data_block_num = DATA_BLOCK_NUM_ARRAY[choice];
+    string_len = STRING_LENGTH;
 
-        process_all_elem_fv((char*)DATASET_FILENAME_ARRAY[i],
-                            (char*)OUTPUT_MHT_FILENAME_ARRAY[i],
-                            &pQHdr,
-                            &pQTail,
-                            data_block_size,
-                            FALSE);
+    printf("%d. Building MHT with %d-block dataset...\n", choice+1, DATA_BLOCK_NUM_ARRAY[choice]);
+    printf("\t Dataset file name: %s\n", DATASET_FILENAME_ARRAY[choice]);
+    data_block_size = sizeof(uint32) + string_len;
+    get_data_block_num = scan_mht_file_data_blocks((char*)DATASET_FILENAME_ARRAY[choice], data_block_size);
+    printf("Number of data block: %d\n", get_data_block_num);
+    printf("Is power of 2: %d\n", is_power_of_2(get_data_block_num));
 
-        printf("\t Finished building MHT file: %s\n\n", OUTPUT_MHT_FILENAME_ARRAY[i]);
-    } //for
+    if(is_power_of_2(get_data_block_num) != 0){
+        extendSupplementaryBlock4MHTFile((char*)DATASET_FILENAME_ARRAY[choice],
+                                        data_block_size,
+                                        cal_the_least_pow2_to_n(data_block_num) - data_block_num,
+                                        extend_indata_file);
+    }
+    printf("After extension, the number of data block: %d\n", cal_the_least_pow2_to_n(data_block_num));
+
+    process_all_elem_fv((char*)DATASET_FILENAME_ARRAY[choice],
+                        (char*)OUTPUT_MHT_FILENAME_ARRAY[choice],
+                        &pQHdr,
+                        &pQTail,
+                        data_block_size,
+                        FALSE);
+
+    printf("\t Finished building MHT file: %s\n\n", OUTPUT_MHT_FILENAME_ARRAY[choice]);
 
     return 0;
 }

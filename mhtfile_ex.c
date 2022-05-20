@@ -326,7 +326,9 @@ void process_all_elem_fv(char* in_data_file,
 	if(popped_qnode_ptr->m_is_written && 
 		popped_qnode_ptr->m_level > NODELEVEL_LEAF){
 		set_mhtFileRootNodeOffset(fo_locate_mht_pos(out_file_fd, 0, SEEK_END) - MHT_BLOCK_SIZE);
+#ifdef PRINT_INFO_ENABLED
 		print_qnode_info(popped_qnode_ptr);
+#endif
 		deleteQNode(&popped_qnode_ptr);
 	}
 
@@ -339,8 +341,10 @@ void process_all_elem_fv(char* in_data_file,
 		fo_update_mht_file_header(out_file_fd, mhthdr_buffer, MHT_HEADER_LEN);
 	}
 
+#ifdef PRINT_INFO_ENABLED
 	println();
 	printQueue(*pQHeader);
+#endif
 
 	freeQueue(pQHeader, pQ);
 	free(tmp_hash_buffer);
@@ -384,7 +388,9 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 		tmp_node_ptr = (*pQ)->prev->prev;
 		popped_qnode_ptr = dequeue_sppos(pQHeader, pQ, tmp_node_ptr);
 		if(!popped_qnode_ptr->m_is_written){
+#ifdef PRINT_INFO_ENABLED
 			print_qnode_info(popped_qnode_ptr); println();
+#endif
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
 			/*
@@ -421,14 +427,18 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			// update index info. of the corresponding block in the MHT file
 			if(popped_qnode_ptr->m_level > NODELEVEL_LEAF && popped_qnode_ptr->m_is_written){
 				update_mht_block_index_info(of_fd, popped_qnode_ptr);
+#ifdef PRINT_INFO_ENABLED
 				printf("UPDATED pQ->prev->prev INDEX\n");
+#endif
 			}
 		}
 
 		tmp_node_ptr = (*pQ)->prev;
 		popped_qnode_ptr = dequeue_sppos(pQHeader, pQ, tmp_node_ptr);
 		if(!popped_qnode_ptr->m_is_written){
+#ifdef PRINT_INFO_ENABLED
 			print_qnode_info(popped_qnode_ptr); println();
+#endif
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
 			/*
@@ -466,12 +476,16 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 			// update index info. of the corresponding block in the MHT file
 			if(popped_qnode_ptr->m_level > NODELEVEL_LEAF && popped_qnode_ptr->m_is_written){
 				update_mht_block_index_info(of_fd, popped_qnode_ptr);
+#ifdef PRINT_INFO_ENABLED
 				printf("UPDATED pQ->prev INDEX\n");
+#endif
 			}
 		}
 
 		if(!(*pQ)->m_is_written){
+#ifdef PRINT_INFO_ENABLED
 			print_qnode_info(*pQ); println();
+#endif
 			(*pQ)->m_is_written = TRUE;
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(*pQ, &mht_block_buffer, mht_block_buffer_len);
@@ -482,8 +496,9 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 							 SEEK_CUR);
 			fsync(of_fd);
 		}
-
+#ifdef PRINT_INFO_ENABLED
 		printQueue(*pQHeader);
+#endif
 		bCombined = FALSE;
 	} // while
 

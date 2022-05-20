@@ -7,6 +7,8 @@
 #include <time.h>
 #include <math.h>
 
+// #define PRINT_INFO_ENABLED
+
 #if (defined __MINGW32__) || (defined __MINGW64__)
     #include <windows.h>
     #define bool BOOL

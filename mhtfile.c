@@ -2184,7 +2184,9 @@ off_t fo_search_mht_block_by_qnode_info(int fd,
 			// block found
 			// NOTE: now the file pointer is at the end of the block
 			mht_block_buf ? free(mht_block_buf) : nop();
+#ifdef PRINT_INFO_ENABLED
 			printf("BLOCK FOUND! FP_POS: %ld\n", fp_pos);
+#endif
 			return fp_pos;
 		}
 		fo_locate_mht_pos(fd, -MHT_BLOCK_SIZE, SEEK_CUR);
