@@ -6,7 +6,7 @@ LIBS = -lm
 all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \
 		test_insertpagedisorder test_print_mht_blk test_output_MHT_file \
-		test_file_buffer
+		test_file_buffer prfm_eval_gen_dataset prfm_eval_build_mht
 .PHONY : all
 
 main : main.o $(OBJ)
@@ -45,10 +45,22 @@ test_output_MHT_file: test_output_MHT_file.o
 test_file_buffer: test_file_buffer.o
 	$(CC) -o test_file_buffer test_file_buffer.o $(OBJ) $(LIBS)
 
+prfm_eval_gen_dataset: prfm_eval_gen_dataset.o
+	$(CC) -o prfm_eval_gen_dataset prfm_eval_gen_dataset.o $(OBJ) $(LIBS)
+
+prfm_eval_build_mht: prfm_eval_build_mht.o
+	$(CC) -o prfm_eval_build_mht prfm_eval_build_mht.o $(OBJ) $(LIBS)
+
 $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h
 
 .PHONY : clean
 clean : 
 	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht test_insertpagedisorder \
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
-	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o $(OBJ)
+	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o prfm_eval_gen_dataset prfm_eval_gen_dataset.o \
+	prfm_eval_build_mht $(OBJ)
+
+.PHONY : clean-ds
+clean-ds : 
+	rm -rf EVAL_DS_100.ds EVAL_DS_200.ds EVAL_DS_500.ds EVAL_DS_1000.ds EVAL_DS_2000.ds EVAL_DS_5000.ds \
+	EVAL_DS_10000.ds EVAL_DS_20000.ds EVAL_DS_50000.ds EVAL_DS_100000.ds EVAL_DS_200000.ds EVAL_DS_500000.ds 
