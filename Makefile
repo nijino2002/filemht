@@ -61,7 +61,7 @@ clean :
 	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht test_insertpagedisorder \
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
 	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o prfm_eval_gen_dataset prfm_eval_gen_dataset.o \
-	prfm_eval_build_mht.o prfm_eval_build_mht prfm_eval_build_mht_mmcs.o prfm_eval_build_mht_mmcs$(OBJ)
+	prfm_eval_build_mht.o prfm_eval_build_mht prfm_eval_build_mht_mmcs.o prfm_eval_build_mht_mmcs $(OBJ)
 
 .PHONY : clean-ds
 clean-ds : 
