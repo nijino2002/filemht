@@ -309,7 +309,7 @@ void process_all_elem_fv(char* in_data_file,
 			memcpy(tmp_hash_buffer, (char*)(read_buffer + sizeof(int)), SHA256_BLOCK_SIZE);
 		}
 		else {	// hash indata
-			generateHashByBuffer_SHA256((char*)(read_buffer + sizeof(int)), bytes_read, tmp_hash_buffer, SHA256_BLOCK_SIZE);
+			generateHashByBuffer_SHA256((char*)(read_buffer + sizeof(int)), bytes_read - sizeof(int), tmp_hash_buffer, SHA256_BLOCK_SIZE);
 		}	
 		mhtnode_ptr = makeMHTNode(*(int*)read_buffer, tmp_hash_buffer); 
 		check_pointer_ex((void*)mhtnode_ptr, "mhtnode_ptr", THIS_FUNC_NAME, "null mhtnode_ptr");

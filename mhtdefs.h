@@ -45,7 +45,7 @@ Return:
 void deleteMHTNode(PMHTNode *node_ptr);
 
 /*
-Generating a hash by page number with SHA256 algorithm
+Generating a hash from a page number with SHA256 algorithm
 Parameter:
 	page_no [IN]: page number.
 	buf [OUT]: buffer holding output hash value.
@@ -55,6 +55,14 @@ Return:
 */
 void generateHashByPageNo_SHA256(int page_no, char *buf, uint32 buf_len);
 
+/**
+ * @brief      Generating a hash from a given buffer with SHA256 algorithm
+ *
+ * @param[in]  in_buf      In buffer containing data
+ * @param[in]  in_buf_len  In buffer length
+ * @param[out] buf         The output buffer containing hash string
+ * @param[in]  buf_len     The buffer length
+ */
 void generateHashByBuffer_SHA256(char *in_buf, uint32 in_buf_len, char *buf, uint32 buf_len);
 
 /*

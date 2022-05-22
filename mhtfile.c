@@ -264,6 +264,90 @@ void buildMHTFile(){
 	return;
 }
 
+void buildMHTFile_fv(const char* in_file_name){
+	const char* THIS_FUNC_NAME = "buildMHTFile_fv";
+	PQNode popped_qnode_ptr = NULL;
+	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
+	uchar *mhtblk_buffer = NULL;
+	uchar *mhthdr_buffer = NULL;
+	int in_file_fd = -1;
+
+	check_pointer_ex((void*)in_file_name, "in_file_name", THIS_FUNC_NAME, "null in_file_name");
+
+	in_file_fd = fo_open_mhtfile(in_file_name);
+	if(in_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "open in_file_name failed");
+		return;
+	}
+
+	// Preparing MHT file
+	// Creating a new MHT file. Note that if the file exists, it will be truncated!
+	if((g_mhtFileFD = fo_create_mhtfile(MHT_DEFAULT_FILE_NAME)) < 0) {
+		debug_print("buildMHTFile", "Creating MHT file failed!");
+		return;
+	}
+
+	// Moving file pointer to 128th bytes to 
+	// reserve space for header block
+	if(fo_locate_mht_pos(g_mhtFileFD, MHT_HEADER_LEN, SEEK_CUR) < 0) {
+		debug_print("buildMHTFile", "Reserving space for MHT file header failed!");
+		return;
+	}
+
+	// Initializing MHT file header
+	// Header will be updated at the end of building MHT file
+	mht_file_header_ptr = makeMHTFileHeader();
+	
+	// Note that 36 means index is 4 bytes, data is 32 bytes.
+	process_all_pages_fv(&g_pQHeader, &g_pQ, in_file_fd, 36, FALSE);
+	/* g_pQHeader->m_length > 1 indicates that there are at least 1 floating leaf node in the queue, 
+	   thus, supplementary nodes must be added to construct a complete binary tree. If g_pQHeader->m_length = 1,
+	   that means only the top root node remains in the queue. In other words, the number of leaf nodes (N_l) 
+	   satifies that log_2(N_l) is an integer.
+	*/
+	if(g_pQHeader->m_length > 1)
+		deal_with_remaining_nodes_in_queue(&g_pQHeader, &g_pQ, g_mhtFileFD);
+
+	//dequeue remaining nodes (actually, only root node remains)
+	while(popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ)){
+		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
+		// Building MHT blocks based on dequeued nodes, then writing to MHT file.
+		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+		// set the first byte of the root buffer to 0x01, which means this buffer stores root node
+		(mhtblk_buffer + MHT_BLOCK_OFFSET_RSVD)[0] = 0x01;
+		if(g_mhtFileFD > 0) {
+			g_mhtFileRootNodeOffset = fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR);	//temporarily storing root node offset in MHT file
+			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);	// write root block to MHT file
+		}
+		free(mhtblk_buffer); mhtblk_buffer = NULL;
+
+		print_qnode_info(popped_qnode_ptr);
+		// free node
+		deleteQNode(&popped_qnode_ptr);
+	} //while
+
+	/***** Updating MHT file header *****/
+	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	if(mht_file_header_ptr && mhthdr_buffer){
+		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;
+		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(g_mhtFileFD, mhthdr_buffer, MHT_HEADER_LEN);
+		free(mhthdr_buffer);
+		freeMHTFileHeader(&mht_file_header_ptr);
+	}
+
+	printQueue(g_pQHeader);
+
+	freeQueue(&g_pQHeader, &g_pQ);
+	fo_close_mhtfile(g_mhtFileFD);
+	fo_close_mhtfile(in_file_fd);
+
+	return;
+}
+
 int initOpenMHTFileWR(uchar *pathname){
 	int ret = -1;
 
@@ -1076,6 +1160,131 @@ void process_all_pages(PQNode *pQHeader, PQNode *pQ) {
 			bCombined = FALSE;
 		}
 	} // for
+}
+
+void process_all_pages_fv(PQNode *pQHeader, 
+						  PQNode *pQ, 
+						  int in_file_fd, 
+						  uint32 in_file_data_blk_size, 
+						  bool is_data_hashed) {
+	char tmp_hash_buffer[SHA256_BLOCK_SIZE] = {0};
+	int i = 0;
+	int diff = 0;
+	PQNode qnode_ptr = NULL;
+	PQNode bkwd_ptr = NULL;
+	PQNode current_qnode_ptr = NULL;
+	PQNode cbd_qnode_ptr = NULL;
+	PQNode popped_qnode_ptr = NULL;
+	PQNode peeked_qnode_ptr = NULL;
+	PQNode lchild_ptr = NULL;
+	PQNode rchild_ptr = NULL;
+	PMHTNode mhtnode_ptr = NULL;
+	bool bCombined = FALSE;
+	bool bDequeueExec = FALSE;	// whether dequeue is executed (for printf control)
+	PMHT_BLOCK mht_blk_ptr = NULL;
+	uchar *mhtblk_buffer = NULL;
+	char *in_data_read_buffer = NULL;
+	int in_data_index = 0;
+	uint32 in_data_bytes_read = 0;
+
+	if(*pQHeader != NULL && *pQ != NULL)
+		freeQueue(pQHeader, pQ);
+	else if(*pQHeader){
+		freeQueue2(pQHeader);
+	}
+	else if(*pQ){
+		freeQueue3(pQ);
+	}
+	else{	// both of g_pQHeader and g_pQ are NULL
+		;	// do nothing
+	}
+
+	if(in_file_fd < 0){
+		debug_print("process_all_pages_fv", "in_file_fd is invalid");
+		return;
+	}
+
+	initQueue(pQHeader, pQ);
+	check_pointer((void*)*pQHeader, "pQHeader");
+	check_pointer((void*)*pQ, "pQ");
+	// read data block from in-data-file
+	in_data_read_buffer = (char*) malloc (in_file_data_blk_size + 1);
+	memset(in_data_read_buffer, 0, in_file_data_blk_size + 1);
+	while((in_data_bytes_read = read(in_file_fd, in_data_read_buffer, in_file_data_blk_size)) > 0){
+		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+		if(is_data_hashed){
+			memcpy(tmp_hash_buffer, (char*)(in_data_read_buffer + sizeof(int)), SHA256_BLOCK_SIZE);
+		}
+		else {	// hash indata
+			generateHashByBuffer_SHA256((char*)(in_data_read_buffer + sizeof(int)), in_data_bytes_read - sizeof(int), tmp_hash_buffer, SHA256_BLOCK_SIZE);
+		}
+		// generateHashByPageNo_SHA256(i + 1, tmp_hash_buffer, SHA256_BLOCK_SIZE);
+		memcpy(&in_data_index, (char*)in_data_read_buffer, sizeof(int));	// read index into in_data_index
+		mhtnode_ptr = makeMHTNode(in_data_index, tmp_hash_buffer); 
+		check_pointer((void*)mhtnode_ptr, "mhtnode_ptr");
+		qnode_ptr = makeQNode(mhtnode_ptr, NODELEVEL_LEAF); 
+		check_pointer((void*)qnode_ptr, "qnode_ptr");
+		enqueue(pQHeader, pQ, qnode_ptr);
+
+		current_qnode_ptr = g_pQ;
+		while ((bkwd_ptr = lookBackward(current_qnode_ptr)) && bkwd_ptr != g_pQHeader){
+			check_pointer(bkwd_ptr, "bkwd_ptr");
+			if(bkwd_ptr->m_level > (*pQ)->m_level)
+				break;
+			if(bkwd_ptr->m_level == (*pQ)->m_level) {
+				lchild_ptr = bkwd_ptr;
+				rchild_ptr = *pQ;
+				cbd_qnode_ptr = makeCombinedQNode(lchild_ptr, rchild_ptr);
+				bCombined = TRUE;
+				check_pointer(cbd_qnode_ptr, "cbd_qnode_ptr");
+				enqueue(pQHeader, pQ, cbd_qnode_ptr);
+				deal_with_nodes_offset(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
+				deal_with_interior_nodes_pageno(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
+			}
+			current_qnode_ptr = current_qnode_ptr->prev;
+			check_pointer(current_qnode_ptr, "current_qnode_ptr");
+		}
+
+		//dequeue till encountering the new created combined node
+		if(bCombined) {
+			while ((peeked_qnode_ptr = peekQueue(*pQHeader)) && peeked_qnode_ptr->m_level < cbd_qnode_ptr->m_level) {
+				popped_qnode_ptr = dequeue(pQHeader, pQ);
+				check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
+
+				// Building MHT blocks based on dequeued nodes, then writing to MHT file.
+				mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
+				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+				if(g_mhtFileFD > 0) {
+					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+				}
+				free(mhtblk_buffer); mhtblk_buffer = NULL;
+				/***************** CODE FOR TEST *****************/
+				/*
+				if(popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == 1 && 
+					popped_qnode_ptr->m_level == 0){
+					mhtblk_buffer = (uchar*) malloc(sizeof(MHT_BLOCK));
+					mht_blk_ptr = makeMHTBlock();
+					convert_qnode_to_mht_block(popped_qnode_ptr, &mht_blk_ptr);
+					serialize_mht_block(mht_blk_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+					print_buffer_in_byte_hex(mhtblk_buffer, MHT_BLOCK_SIZE);
+					freeMHTBlock(&mht_blk_ptr);
+					free(mhtblk_buffer);
+				}
+				*/
+				/************************************************/
+
+				print_qnode_info(popped_qnode_ptr);
+				deleteQNode(&popped_qnode_ptr);
+				bDequeueExec = TRUE;
+			}
+			bDequeueExec ? printf("\n\n") : nop();
+			bDequeueExec = FALSE;
+			bCombined = FALSE;
+		}// if
+		memset(in_data_read_buffer, 0, in_file_data_blk_size + 1);
+	}//while
+	free(in_data_read_buffer);
 }
 
 void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ, int fd){

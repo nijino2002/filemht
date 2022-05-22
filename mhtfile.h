@@ -101,6 +101,15 @@ Return:
 */
 void buildMHTFile();
 
+/*
+Building MHT file from a given in-data file.
+Parameters:
+    in_file_name: in-data file name
+Return:
+    NULL.
+*/
+void buildMHTFile_fv(const char* in_file_name);
+
 /**
  * @brief      Initializing opening MHT file for reading and writing.
  *
@@ -245,7 +254,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len);
 /*----------  Helper Functions  ---------------*/
 
 /*
-This function deals with each page of the database file and create a MHT sequence
+This function deals with each page of the database file and create a MHT sequence file 
 in a double-linked queue.
 Parameters:
 	pQHeader: a 2-d pointer to queue's header.
@@ -254,6 +263,29 @@ Return:
 	NULL.
 */
 void process_all_pages(PQNode *pQHeader, PQNode *pQ);
+
+/*
+This function deals with each block of in-data file and create a MHT sequence file 
+in a double-linked queue. Each block of the in-data file usually has the following 
+structure:
+--------------------------
+| int index | char* data |
+--------------------------
+Thus, index is in fixed size (4 bytes), whereas data length can obtained by "in_file_data_blk_size - 4".
+Parameters:
+    pQHeader: a 2-d pointer to queue's header.
+    pQ: a 2-d pointer to queue's tail (current enqueued position).
+    in_file_fd: in-data file handle
+    in_file_data_blk_size: the block size of the in-data file
+    is_data_hashed: indicates whether the data within each block is a hash value
+Return:
+    NULL.
+*/
+void process_all_pages_fv(PQNode *pQHeader, 
+                          PQNode *pQ, 
+                          int in_file_fd, 
+                          uint32 in_file_data_blk_size, 
+                          bool is_data_hashed);
 
 /*
 This function only deals with the remaining nodes in the queue, which will 
