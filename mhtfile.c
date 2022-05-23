@@ -322,8 +322,9 @@ void buildMHTFile_fv(const char* in_file_name){
 			fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);	// write root block to MHT file
 		}
 		free(mhtblk_buffer); mhtblk_buffer = NULL;
-
+#ifdef PRINT_INFO_ENABLED
 		print_qnode_info(popped_qnode_ptr);
+#endif
 		// free node
 		deleteQNode(&popped_qnode_ptr);
 	} //while
@@ -338,8 +339,9 @@ void buildMHTFile_fv(const char* in_file_name){
 		free(mhthdr_buffer);
 		freeMHTFileHeader(&mht_file_header_ptr);
 	}
-
+#ifdef PRINT_INFO_ENABLED
 	printQueue(g_pQHeader);
+#endif
 
 	freeQueue(&g_pQHeader, &g_pQ);
 	fo_close_mhtfile(g_mhtFileFD);
@@ -1259,26 +1261,17 @@ void process_all_pages_fv(PQNode *pQHeader,
 					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 				}
 				free(mhtblk_buffer); mhtblk_buffer = NULL;
-				/***************** CODE FOR TEST *****************/
-				/*
-				if(popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == 1 && 
-					popped_qnode_ptr->m_level == 0){
-					mhtblk_buffer = (uchar*) malloc(sizeof(MHT_BLOCK));
-					mht_blk_ptr = makeMHTBlock();
-					convert_qnode_to_mht_block(popped_qnode_ptr, &mht_blk_ptr);
-					serialize_mht_block(mht_blk_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
-					print_buffer_in_byte_hex(mhtblk_buffer, MHT_BLOCK_SIZE);
-					freeMHTBlock(&mht_blk_ptr);
-					free(mhtblk_buffer);
-				}
-				*/
-				/************************************************/
-
+#ifdef PRINT_INFO_ENABLED
 				print_qnode_info(popped_qnode_ptr);
+#endif
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;
 			}
-			bDequeueExec ? printf("\n\n") : nop();
+#ifdef PRINT_INFO_ENABLED
+			if(bDequeueExec){
+				printf("\n\n");
+			}
+#endif
 			bDequeueExec = FALSE;
 			bCombined = FALSE;
 		}// if
@@ -1377,7 +1370,11 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ, int fd){
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;
 			} // while
-			bDequeueExec ? printf("\n\n") : nop();
+#ifdef PRINT_INFO_ENABLED
+			if(bDequeueExec){
+				printf("\n\n");
+			}
+#endif
 			bDequeueExec = FALSE;
 			bCombined = FALSE;
 		}// if

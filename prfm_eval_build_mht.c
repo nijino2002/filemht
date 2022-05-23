@@ -1,12 +1,12 @@
 /**
  * @defgroup   Performance Evaluations
  *
- * @brief      This file implements the performance evaluation on building MHT in MMSV version.
+ * @brief      This file implements the performance evaluation on building MHT in MMSV (Memory-saving) version.
  *
  * @author     Lu Di
  * @date       2022.05.20
  */
-
+#include <sys/time.h>
 #include "defs.h"
 #include "prfm_eval_defs.h"
 #include "mhtfile.h"
@@ -26,6 +26,10 @@ int main(int argc, char const *argv[])
     uint32 get_data_block_num = 0;
     uint32 string_len = 10;
     uint32 choice = 0;
+
+    struct  timeval  start;
+    struct  timeval  end;
+    unsigned long timer;
 
     if(argc < 2){
         printf("Usage: %s [choice]\n", argv[0]);
@@ -56,14 +60,18 @@ int main(int argc, char const *argv[])
     }
     printf("After extension, the number of data block: %d\n", cal_the_least_pow2_to_n(data_block_num));
 
+    gettimeofday(&start,NULL);
     process_all_elem_fv((char*)DATASET_FILENAME_ARRAY[choice],
                         (char*)OUTPUT_MHT_FILENAME_ARRAY[choice],
                         &pQHdr,
                         &pQTail,
                         data_block_size,
                         FALSE);
+    gettimeofday(&end,NULL);
+    timer = 1000000 * (end.tv_sec-start.tv_sec)+ end.tv_usec-start.tv_usec;
 
     printf("\t Finished building MHT file: %s\n\n", OUTPUT_MHT_FILENAME_ARRAY[choice]);
+    printf("TIMER = %ld us\n",timer);
 
     return 0;
 }
