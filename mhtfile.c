@@ -564,6 +564,13 @@ PMHT_BLOCK searchPageByNo(int fd, int page_no) {
 	*/
 }
 
+bool verifyHashInMHT(int fd, void* data_elem_ptr){
+	bool ret = FALSE;
+
+
+	return ret;
+}
+
 /*int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len) {
 	uchar *block_buf = NULL;
 	//需要更新的MHT_block的偏移量

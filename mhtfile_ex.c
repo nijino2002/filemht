@@ -112,6 +112,13 @@ uint32 extendSupplementaryBlock4MHTFile(char* file_name,
 					  data_block_num);
 }
 
+PMHT_BLOCK searchBlockByIndex(int fd, int index){
+	return searchPageByNo(fd, index);
+}
+
+int locateMHTBlockOffsetByIndex(int fd, int index){
+	return locateMHTBlockOffsetByPageNo(fd, index);
+}
 
 /****************************************************************
  *                   Helper Functions

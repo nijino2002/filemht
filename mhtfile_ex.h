@@ -105,6 +105,28 @@ uint32 extendSupplementaryBlock4MHTFile(char* file_name,
                                         uint32 data_block_num, 
                                         extend_func extFuncPtr);
 
+/**
+ * @brief      Searching the corresponding block in MHT file by a given index.
+ *
+ * @param[in]  fd       The file descriptor.
+ * @param[in]  index    The given index.
+ *
+ * @return     A new created pointer to an MHT block structure that preserving the found block.
+ *             Null will be returned if errors occur or no block is found.
+ */
+PMHT_BLOCK searchBlockByIndex(int fd, int index);
+
+/**
+ * @brief      Locates an MHT block offset by a given index.
+ *
+ * @param[in]  fd       The file descriptor.
+ * @param[in]  index    The given index.
+ *
+ * @return     If success, the offset of the block corresponding to the given index is returned,
+ *             otherwise, values <= 0 will be returned.
+ */
+int locateMHTBlockOffsetByIndex(int fd, int index);
+
 /****************************************************************
  *	                Help Functions
 *****************************************************************/
