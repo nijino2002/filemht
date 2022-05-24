@@ -1,6 +1,6 @@
 CC_FLAGS = -g
 CC = gcc $(CC_FLAGS)
-OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o
+OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o dataelem.o
 LIBS = -lm
 
 all : main test_searchpageinmht test_updatehashinmht test_fileio \
@@ -63,7 +63,7 @@ prfm_eval_data_int_verify: prfm_eval_data_int_verify.o
 
 	
 
-$(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h
+$(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h dataelem.h
 
 .PHONY : clean
 clean : 

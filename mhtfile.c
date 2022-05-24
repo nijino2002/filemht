@@ -1,3 +1,4 @@
+#include "dataelem.h"
 #include "mhtfile.h"
 
 extern PQNode g_pQHeader;
@@ -565,8 +566,35 @@ PMHT_BLOCK searchPageByNo(int fd, int page_no) {
 }
 
 bool verifyHashInMHT(int fd, void* data_elem_ptr){
+	const char* THIS_FUNC_NAME = "verifyHashInMHT";
 	bool ret = FALSE;
+	PDATA_ELEM pDE = NULL;
+	PMHT_BLOCK pmht_block = NULL;
+	SHA256_CTX ctx;
+	char out_hash_buffer[HASH_LEN] = {0};
 
+	if(fd < 0){
+		debug_print(THIS_FUNC_NAME, "invalid file handler");
+		return ret;
+	}
+
+	if(!(ret = check_pointer_ex(data_elem_ptr, "data_elem_ptr", THIS_FUNC_NAME, "Null pointer data_elem_ptr"))) {
+		return ret;
+	}
+
+	pDE = (PDATA_ELEM)data_elem_ptr;
+	pmht_block = searchPageByNo(fd, pDE->m_index);
+	if(!pmht_block){
+		printf("The MHT block with index %d cannot be found.\n", pDE->m_index);
+		ret = FALSE;
+		return ret;
+	}
+
+	sha256_init(&ctx);
+	sha256_update(&ctx, (char*)pDE->m_pdata, pDE->m_data_len);
+	sha256_final(&ctx, out_hash_buffer);
+
+	// ret = compare_two_hashes();
 
 	return ret;
 }
