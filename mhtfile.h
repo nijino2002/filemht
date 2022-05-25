@@ -108,7 +108,7 @@ Parameters:
 Return:
     NULL.
 */
-void buildMHTFile_fv(const char* in_file_name);
+void buildMHTFile_fv(const char* in_file_name, const char* out_mht_file);
 
 /**
  * @brief      Initializing opening MHT file for reading and writing.

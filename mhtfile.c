@@ -265,7 +265,7 @@ void buildMHTFile(){
 	return;
 }
 
-void buildMHTFile_fv(const char* in_file_name){
+void buildMHTFile_fv(const char* in_file_name, const char* out_mht_file){
 	const char* THIS_FUNC_NAME = "buildMHTFile_fv";
 	PQNode popped_qnode_ptr = NULL;
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
@@ -485,11 +485,13 @@ PMHT_BLOCK searchPageByNo(int fd, int page_no) {
 	// read block buffer
 	block_buf = (uchar*) malloc (MHT_BLOCK_SIZE);
 	memset(block_buf, 0, MHT_BLOCK_SIZE);
-	fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	// fo_read_mht_block2(g_mhtFileFdRd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
+	fo_read_mht_block2(fd, block_buf, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 
 	// build a MHT block structure to store the page info.
 	mhtblk_ptr = makeMHTBlock();
 	unserialize_mht_block(block_buf, MHT_BLOCK_SIZE, &mhtblk_ptr);
+	free(block_buf);
 
 	return mhtblk_ptr;
 	
@@ -594,7 +596,8 @@ bool verifyHashInMHT(int fd, void* data_elem_ptr){
 	sha256_update(&ctx, (char*)pDE->m_pdata, pDE->m_data_len);
 	sha256_final(&ctx, out_hash_buffer);
 
-	// ret = compare_two_hashes();
+	ret = compare_two_hashes(pmht_block->m_hash, out_hash_buffer);
+	freeMHTBlock(&pmht_block);
 
 	return ret;
 }
@@ -2529,3 +2532,11 @@ void fo_printMHTFile(int fd)
     unserialize_mht_block(mhtblk_buffer,  MHT_BLOCK_SIZE, &tmpblk_ptr);
     printf("pgno:%d\t level: %d\t ppgno:%d\t  lpgno:%d\t rpgno:%d\n",tmpblk_ptr->m_pageNo, tmpblk_ptr->m_nodeLevel, tmpblk_ptr->m_parentPageNo, tmpblk_ptr->m_lChildPageNo, tmpblk_ptr->m_rChildPageNo);
 }
+
+
+/*---------- End of File Operation Functions  ------------*/
+
+/*--------------- Misc. Functions ----------------*/
+
+
+/*--------------- End of Misc. Functions ----------------*/

@@ -32,6 +32,9 @@ PDATA_ELEM de_create(int idx, void *d, uint32 d_len){
 		return pelem;
 
 	de_init(pelem);
+	pelem->m_index = idx;
+	pelem->m_pdata = d;
+	pelem->m_data_len = d_len;
 
 	return pelem;
 }
