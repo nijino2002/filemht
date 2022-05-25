@@ -273,7 +273,8 @@ void buildMHTFile_fv(const char* in_file_name, const char* out_mht_file){
 	uchar *mhthdr_buffer = NULL;
 	int in_file_fd = -1;
 
-	check_pointer_ex((void*)in_file_name, "in_file_name", THIS_FUNC_NAME, "null in_file_name");
+	if(!check_pointer_ex((void*)in_file_name, "in_file_name", THIS_FUNC_NAME, "null in_file_name")) return;
+	if(!check_pointer_ex((void*)out_mht_file, "out_mht_file", THIS_FUNC_NAME, "null out_mht_file")) return;
 
 	in_file_fd = fo_open_mhtfile(in_file_name);
 	if(in_file_fd < 0){
@@ -283,7 +284,7 @@ void buildMHTFile_fv(const char* in_file_name, const char* out_mht_file){
 
 	// Preparing MHT file
 	// Creating a new MHT file. Note that if the file exists, it will be truncated!
-	if((g_mhtFileFD = fo_create_mhtfile(MHT_DEFAULT_FILE_NAME)) < 0) {
+	if((g_mhtFileFD = fo_create_mhtfile(out_mht_file)) < 0) {
 		debug_print("buildMHTFile", "Creating MHT file failed!");
 		return;
 	}

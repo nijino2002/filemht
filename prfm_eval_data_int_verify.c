@@ -1,5 +1,5 @@
 /**
- * @defgroup   PPerformance Evaluations
+ * @defgroup   Performance Evaluations
  *
  * @brief      This file implements performance evaluation on data integrity verification.
  *
@@ -17,7 +17,7 @@
 #include "mhtfile.h"
 #include "mhtfile_ex.h"
 
-#define     PICKED_MHT_BLOCK_NUM    10000
+#define     TEST_ROUND    100
 #define     DS_BLOCK_LEN        36
 
 int ds_block_num[12] = {128, 256, 512, 1024, 2048, 8192, 16384, 32768, 65536, 131072, 262144, 524288};
@@ -81,7 +81,7 @@ int main(int argc, char const *argv[])
 
 	/* Pick 10000 blocks from a dataset file randomly and 
     verify integrity of these 10000 picked blocks in the MHT file */
-    for(i = 0; i < 100; i++){
+    for(i = 0; i < TEST_ROUND; i++){
         picked_index = (rand() % ds_block_num[choice]) + 1;
         printf("Picked index %d\n", picked_index);
         // read a DS block from the DS file
@@ -115,7 +115,7 @@ int main(int argc, char const *argv[])
     fo_close_mhtfile(ds_fd);
     fo_close_mhtfile(mht_fd);
 
-    printf("The average verification time: %g us.\n", (double)acc_timer / (double)success_count);
+    printf("The average verification time: %Lg us.\n", (long double)acc_timer / (long double)success_count);
 
 	return 0;
 }
