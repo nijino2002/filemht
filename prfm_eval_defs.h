@@ -43,6 +43,11 @@ const uint32 DATA_BLOCK_NUM_ARRAY[DS_ARRAY_LEN] = {100, 200, 500,
 												   10000, 20000, 50000, 
 												   100000, 200000, 500000};
 
+const uint32 DATA_BLOCK_ACTUAL_NUM_ARRAY[DS_ARRAY_LEN] = {128, 256, 512, 
+														  1024, 2048, 8192, 
+														  16384, 32768, 65536, 
+														  131072, 262144, 524288};
+
 const uint32 STRING_LENGTH = 32;	// 32-byte string
 
 #endif
