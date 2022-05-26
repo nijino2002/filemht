@@ -918,8 +918,8 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, cha
 
     //判断页面是否存在
     //Check if the page exists
-	if( (fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME))  < 3){
-		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
+	if( (fd = initOpenMHTFileWR(mht_filename))  < 3){
+		printf("Failed to open file %s\n", mht_filename);
 		exit(0);
 	}
     mhtblk_ptr = searchPageByNo(fd,page_no);
@@ -947,8 +947,8 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, cha
     //If the page does not exist, perform the insert operation
     //1.创建临时文件并复制原有文件信息
     //1. Create a temporary file and copy the original file information
-    fo_copy_file(MHT_DEFAULT_FILE_NAME, MHT_TMP_FILE_NAME);
-	if( (new_fd = initOpenMHTFileWR(MHT_DEFAULT_FILE_NAME))  < 2){
+    fo_copy_file(mht_filename, MHT_TMP_FILE_NAME);
+	if( (new_fd = initOpenMHTFileWR(mht_filename))  < 2){
 		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
 		exit(0);
 	}
