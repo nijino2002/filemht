@@ -20,16 +20,16 @@
 
 #define     TEST_ROUND    1000
 
-
-
 int main(int argc, char const *argv[])
 {
     int mht_fd = -1;
     int i = 0;
-    PMHT_BLOCK pmht_block = NULL;
+    int found_offset = -1;
     int picked_index = UNASSIGNED_PAGENO;
     char* new_string = NULL;
+    char* new_hash = NULL;
     int success_count = 0;
+    int choice = 0;
 
     struct  timeval  start;
     struct  timeval  end;
@@ -50,14 +50,35 @@ int main(int argc, char const *argv[])
     }
 
     srand((uint32)time(NULL));
+    new_hash = (char*) malloc (HASH_LEN);
 
     for (i = 0; i < TEST_ROUND; ++i)
     {
         picked_index = (rand() % DATA_BLOCK_NUM_ARRAY[choice]) + 1;
-        pmht_block = searchPageByNo(mht_fd, picked_index);
+        printf("Picked Index: %d\n", picked_index);
+        new_string = generate_random_string(HASH_LEN);
+        memset(new_hash, 0, HASH_LEN);
+        generateHashByBuffer_SHA256(new_string, HASH_LEN, new_hash, HASH_LEN);
+        
+        gettimeofday(&start,NULL);
+        found_offset = updateMHTBlockHashByPageNo(picked_index, new_hash, HASH_LEN, mht_fd);
+        gettimeofday(&end,NULL);
+        timer = 1000000 * (end.tv_sec-start.tv_sec)+ end.tv_usec-start.tv_usec;
+
+        if(found_offset > 0){
+            success_count++;
+            acc_timer += timer;
+        }
+
+        free(new_string); new_string = NULL;
+        lseek(mht_fd, 0, SEEK_SET);
+        println();
     }
 
+    printf("The average update time: %Lg us.\n", (long double)acc_timer / (long double)success_count);
     fo_close_mhtfile(mht_fd);
+    free(new_hash);
+    if(new_string) free(new_string);
 
     return 0;
 }

@@ -264,10 +264,11 @@ returns:
  * @param[in]  page_no        the page number value of the inserted page.
  * @param[in]  hash_val       the hash value corresponding to the inserted page.
  * @param[in]  hash_val_len   the length of the hash value.
+ * @param[in]  mht_filename   the MHT file name.
  *
  * @return     If the insertion fails, the return value is less than 0.
  */
-int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len);
+int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, char* mht_filename);
 
 
 /*=============================================*/
@@ -491,7 +492,7 @@ PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN);
  *
  *  @return					A pointer to a new created queue node.
 */
-PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset);
+PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset, int mht_fd);
 
 /*
 * 利用填充节点完成插入操作时，更新由其引起的页码改变

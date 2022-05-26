@@ -889,7 +889,7 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
     return 0;
 }
 
-int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len)
+int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, char* mht_filename)
 {
     PMHT_BLOCK mhtblk_ptr = NULL;
     uchar* read_block_buf = NULL;
@@ -1826,8 +1826,8 @@ void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset)
 	rhash = (uchar*) malloc(HASH_LEN);
 	memset(lhash, 0, HASH_LEN);
 	memset(rhash, 0, HASH_LEN);
-	fo_read_mht_file(g_mhtFileFdRd, lhash, HASH_LEN, lchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
-	fo_read_mht_file(g_mhtFileFdRd, rhash, HASH_LEN, rchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
+	fo_read_mht_file(fd, lhash, HASH_LEN, lchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
+	fo_read_mht_file(fd, rhash, HASH_LEN, rchild_offset*MHT_BLOCK_SIZE+MHT_BLOCK_OFFSET_HASH+offset, SEEK_SET);
 
 	//计算新的哈希值并替换
 	//Calculate the new hash value and replace
@@ -1884,7 +1884,7 @@ PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN)
 	return node_ptr;
 }
 
-PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
+PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset, int mht_fd)
 {
 	//printf("test mht_buffer_to_qnode begin\n");
 	PQNode qnode_ptr = NULL;
@@ -1916,7 +1916,7 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset)
 		block_offset = block_offset + rchild_offset * MHT_BLOCK_SIZE;
 		//printf("block_offset:%d\n", block_offset);
 		memset(temp_block_buf, 0, MHT_BLOCK_SIZE);
-		fo_read_mht_block2(g_mhtFileFdRd, temp_block_buf, MHT_BLOCK_SIZE, block_offset, SEEK_SET);
+		fo_read_mht_block2(mht_fd, temp_block_buf, MHT_BLOCK_SIZE, block_offset, SEEK_SET);
 	}
 	most_right_pgno = *((int*)(temp_block_buf + MHT_BLOCK_OFFSET_PAGENO));
 	//printf("most_right_pgno:%d\n", most_right_pgno);
@@ -2114,7 +2114,7 @@ int extentTheMHT(int fd)
         //b.将根结点入队，进行二叉树补全
         //b. Put the root node into the team and perform binary tree completion
         initQueue(&g_pQHeader, &g_pQ);
-        qnode_ptr = mht_buffer_to_qnode(rootnode_buf, mhtfilehdr_ptr->m_rootNodeOffset);
+        qnode_ptr = mht_buffer_to_qnode(rootnode_buf, mhtfilehdr_ptr->m_rootNodeOffset, fd);
         if(!qnode_ptr)
         {
             return -1;

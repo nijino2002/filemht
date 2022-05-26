@@ -7,7 +7,7 @@ all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \
 		test_insertpagedisorder test_print_mht_blk test_output_MHT_file \
 		test_file_buffer prfm_eval_gen_dataset prfm_eval_build_mht prfm_eval_build_mht_mmcs \
-		test_buildMHTFile_MMCS prfm_eval_data_int_verify
+		test_buildMHTFile_MMCS prfm_eval_data_int_verify prfm_eval_update_mht
 .PHONY : all
 
 main : main.o $(OBJ)
@@ -61,7 +61,8 @@ prfm_eval_build_mht_mmcs: prfm_eval_build_mht_mmcs.o
 prfm_eval_data_int_verify: prfm_eval_data_int_verify.o
 	$(CC) -o prfm_eval_data_int_verify prfm_eval_data_int_verify.o $(OBJ) $(LIBS)
 
-	
+prfm_eval_update_mht: prfm_eval_update_mht.o
+	$(CC) -o prfm_eval_update_mht prfm_eval_update_mht.o $(OBJ) $(LIBS)
 
 $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h dataelem.h
 
@@ -71,7 +72,7 @@ clean :
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
 	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o prfm_eval_gen_dataset prfm_eval_gen_dataset.o \
 	prfm_eval_build_mht.o prfm_eval_build_mht prfm_eval_build_mht_mmcs.o prfm_eval_build_mht_mmcs test_buildMHTFile_MMCS test_buildMHTFile_MMCS.o prfm_eval_data_int_verify.o \
-	prfm_eval_data_int_verify $(OBJ)
+	prfm_eval_data_int_verify prfm_eval_update_mht.o prfm_eval_update_mht $(OBJ)
 
 .PHONY : clean-ds
 clean-ds : 
