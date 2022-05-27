@@ -30,7 +30,10 @@ PQNode makeQNode(PMHTNode pmhtnode, uint16 level){
 	node_ptr->m_level = level;
 	node_ptr->m_is_written = FALSE;
 	node_ptr->m_MHTNode_ptr = pmhtnode;
-	node_ptr->m_is_supplementary_node = (uchar) FALSE;
+	if(node_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX)
+		node_ptr->m_is_supplementary_node = (uchar) TRUE;
+	else
+		node_ptr->m_is_supplementary_node = (uchar) FALSE;
 	node_ptr->m_is_zero_node = (uchar) FALSE;
 	node_ptr->m_RMSTL_page_no = UNASSIGNED_PAGENO;
 	node_ptr->prev = NULL;

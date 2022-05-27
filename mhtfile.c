@@ -835,6 +835,9 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		return -1;
 	}
 
+	//Reset the file handler
+	lseek(fd, 0, SEEK_SET);
+
 	if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
     {
 		debug_print("insertNewMHTBlock", "Failed to read MHT file header");
@@ -2129,13 +2132,16 @@ int extentTheMHT(int fd)
         return -1;
     }
 
+    //Reset the file hanlder
+    lseek(fd, 0, SEEK_SET);
+
     if(!(mhtfilehdr_ptr = readMHTFileHeader(fd)))
     {
         debug_print("extentTheMHT", "Failed to read MHT file header");
         return -1;
     }
     supplementaryNode_offset = mhtfilehdr_ptr->m_firstSupplementaryLeafOffset;
-    printf("supplementaryNode_offset :%d\n",supplementaryNode_offset );
+    printf("FROM extentTheMHT: supplementaryNode_offset :%d\n",supplementaryNode_offset );
 
     g_mhtFileRootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
     if(supplementaryNode_offset == 0)

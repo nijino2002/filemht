@@ -49,14 +49,14 @@ int main(int argc, char const *argv[])
 
     for (i = 0; i < DS_ARRAY_LEN; ++i)
     {
-        for (j = 0; j < TEST_ROUND_ARRAY[i] - 1; ++j)
+        for (j = 0; j < TEST_ROUND_ARRAY[i] - 2; ++j)
         {
             fd = initOpenMHTFileWR((char*)OUTPUT_MHT_FILENAME_ARRAY[i]);
 
             // Make a new MHT block
             new_rand_str = generate_random_string(HASH_LEN);
             memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
-            selected_index = DATA_BLOCK_ACTUAL_NUM_ARRAY[i] + j + 1;
+            selected_index = DATA_BLOCK_NUM_ARRAY[i] + j + 1;
             generateHashByPageNo_SHA256(selected_index, tmp_hash_buffer, SHA256_BLOCK_SIZE);
             mhtnode_ptr = makeMHTNode(selected_index, tmp_hash_buffer);
             qnode_ptr = makeQNode(mhtnode_ptr, NODELEVEL_LEAF);
