@@ -7,7 +7,8 @@ all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \
 		test_insertpagedisorder test_print_mht_blk test_output_MHT_file \
 		test_file_buffer prfm_eval_gen_dataset prfm_eval_build_mht prfm_eval_build_mht_mmcs \
-		test_buildMHTFile_MMCS prfm_eval_data_int_verify prfm_eval_update_mht
+		test_buildMHTFile_MMCS prfm_eval_data_int_verify prfm_eval_update_mht \
+		prfm_eval_insertsp prfm_eval_insertcmn
 .PHONY : all
 
 main : main.o $(OBJ)
@@ -64,6 +65,13 @@ prfm_eval_data_int_verify: prfm_eval_data_int_verify.o
 prfm_eval_update_mht: prfm_eval_update_mht.o
 	$(CC) -o prfm_eval_update_mht prfm_eval_update_mht.o $(OBJ) $(LIBS)
 
+prfm_eval_insertsp: prfm_eval_insertsp.o
+	$(CC) -o prfm_eval_insertsp prfm_eval_insertsp.o $(OBJ) $(LIBS)
+
+prfm_eval_insertcmn: prfm_eval_insertcmn.o
+	$(CC) -o prfm_eval_insertcmn prfm_eval_insertcmn.o $(OBJ) $(LIBS)
+
+
 $(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h dataelem.h
 
 .PHONY : clean
@@ -72,9 +80,16 @@ clean :
 	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
 	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o prfm_eval_gen_dataset prfm_eval_gen_dataset.o \
 	prfm_eval_build_mht.o prfm_eval_build_mht prfm_eval_build_mht_mmcs.o prfm_eval_build_mht_mmcs test_buildMHTFile_MMCS test_buildMHTFile_MMCS.o prfm_eval_data_int_verify.o \
-	prfm_eval_data_int_verify prfm_eval_update_mht.o prfm_eval_update_mht $(OBJ)
+	prfm_eval_data_int_verify prfm_eval_update_mht.o prfm_eval_update_mht prfm_eval_insertsp.o prfm_eval_insertsp prfm_eval_insertcmn.o prfm_eval_insertcmn $(OBJ)
 
 .PHONY : clean-ds
 clean-ds : 
 	rm -rf EVAL_DS_100.ds EVAL_DS_200.ds EVAL_DS_500.ds EVAL_DS_1000.ds EVAL_DS_2000.ds EVAL_DS_5000.ds \
 	EVAL_DS_10000.ds EVAL_DS_20000.ds EVAL_DS_50000.ds EVAL_DS_100000.ds EVAL_DS_200000.ds EVAL_DS_500000.ds 
+
+.PHONY : clean-mhtfile
+clean-mhtfile : 
+	rm -rf OUTPUT_MHT_100.mht OUTPUT_MHT_200.mht OUTPUT_MHT_500.mht \
+	OUTPUT_MHT_1000.mht OUTPUT_MHT_2000.mht OUTPUT_MHT_5000.mht \
+	OUTPUT_MHT_10000.mht OUTPUT_MHT_20000.mht OUTPUT_MHT_50000.mht \
+	OUTPUT_MHT_100000.mht OUTPUT_MHT_200000.mht OUTPUT_MHT_500000.mht

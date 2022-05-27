@@ -241,7 +241,9 @@ void buildMHTFile(){
 		}
 		free(mhtblk_buffer); mhtblk_buffer = NULL;
 
+#ifdef PRINT_INFO_ENABLED
 		print_qnode_info(popped_qnode_ptr);
+#endif
 		// free node
 		deleteQNode(&popped_qnode_ptr);
 	} //while
@@ -352,12 +354,10 @@ void buildMHTFile_fv(const char* in_file_name, const char* out_mht_file){
 	return;
 }
 
-int initOpenMHTFileWR(uchar *pathname){
-	int ret = -1;
-
+int initOpenMHTFileWR(char *pathname){
 	if(!pathname){
 		debug_print("initOpenMHTFile", "Null pathname");
-		return ret;
+		return -1;
 	}
 
 	// file descriptor 0, 1 and 2 refer to STDIN, STDOUT and STDERR
@@ -367,9 +367,8 @@ int initOpenMHTFileWR(uchar *pathname){
 
 	// open MHT file in "READ & WRITE" mode
 	g_mhtFileFdRd = fo_open_mhtfile(pathname);
-	ret = g_mhtFileFdRd;
 
-	return ret;
+	return g_mhtFileFdRd;
 }
 
 PMHT_FILE_HEADER readMHTFileHeader(int fd) {
@@ -842,7 +841,9 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 		return -1;
 	}
     supplementaryNode_offset = mhtfilehdr_ptr->m_firstSupplementaryLeafOffset;
+#ifdef PRINT_INFO_ENABLED
 	printf("supplementaryNode_offset :%d\n",supplementaryNode_offset );
+#endif
 
 	g_mhtFileRootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
     //2.2没有可以进行填充的节点，需要添加新的补全节点;否则进行下一步更新操作
@@ -854,17 +855,23 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
 
 	//3.将节点信息写入
 	//3. Write node information
+#ifdef PRINT_INFO_ENABLED
 	printf("supplementaryNode_offset: %d\n", supplementaryNode_offset);
+#endif
 	//修改节点信息并写入文件
 	//Modify node information and write to file
 	mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
 	memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 	fo_read_mht_block2(fd, mhtblk_buffer, MHT_BLOCK_SIZE, supplementaryNode_offset, SEEK_SET);
 	memcpy(mhtblk_buffer+MHT_BLOCK_OFFSET_PAGENO, &(pmht_block->m_pageNo), sizeof(int));
+#ifdef PRINT_INFO_ENABLED
 	printf("mhtblk_buffer + MHT_BLOCK_OFFSET_PAGENO: %d\t", *((int*)(mhtblk_buffer + MHT_BLOCK_OFFSET_PAGENO)));
+#endif
 	memcpy(mhtblk_buffer+MHT_BLOCK_OFFSET_HASH, pmht_block->m_hash, HASH_LEN);
 	memcpy(mhtblk_buffer+MHT_BLOCK_OFFSET_ISN, &(pmht_block->m_isSupplementaryNode), sizeof(char));
+#ifdef PRINT_INFO_ENABLED
 	printf("pmht_block->m_isSupplementaryNode: %hhu\n", pmht_block->m_isSupplementaryNode);
+#endif
 	memcpy(mhtblk_buffer+MHT_BLOCK_OFFSET_IZN, &(pmht_block->m_isZeroNode), sizeof(char));
 	updateMHTBlockHashByMHTBlock(mhtblk_buffer, supplementaryNode_offset, fd);
 
@@ -889,7 +896,7 @@ int insertNewMHTBlock(PMHT_BLOCK pmht_block, int fd) {
     return 0;
 }
 
-int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, char* mht_filename)
+int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, const char* mht_filename)
 {
     PMHT_BLOCK mhtblk_ptr = NULL;
     uchar* read_block_buf = NULL;
@@ -918,7 +925,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, cha
 
     //判断页面是否存在
     //Check if the page exists
-	if( (fd = initOpenMHTFileWR(mht_filename))  < 3){
+	if( (fd = initOpenMHTFileWR((char*)mht_filename))  < 3){
 		printf("Failed to open file %s\n", mht_filename);
 		exit(0);
 	}
@@ -947,8 +954,8 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, cha
     //If the page does not exist, perform the insert operation
     //1.创建临时文件并复制原有文件信息
     //1. Create a temporary file and copy the original file information
-    fo_copy_file(mht_filename, MHT_TMP_FILE_NAME);
-	if( (new_fd = initOpenMHTFileWR(mht_filename))  < 2){
+    fo_copy_file((char*)mht_filename, (char*)MHT_TMP_FILE_NAME);
+	if( (new_fd = initOpenMHTFileWR((char*)mht_filename))  < 2){
 		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
 		exit(0);
 	}
@@ -1245,6 +1252,8 @@ void process_all_pages_fv(PQNode *pQHeader,
 		return;
 	}
 
+	set_isEncounterFSLO(FALSE);
+
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");
@@ -1296,6 +1305,22 @@ void process_all_pages_fv(PQNode *pQHeader,
 				mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
 				memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
+
+				// record the offset of the first supplementary leaf node
+				if(popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
+					popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
+					// mark the supplementary leaf node
+					popped_qnode_ptr->m_is_supplementary_node = TRUE;
+					popped_qnode_ptr->m_is_zero_node = TRUE;
+					// record the offset of the first supplementary leaf node
+					if(!get_isEncounterFSLO())
+					{
+						set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(g_mhtFileFD, 0, SEEK_CUR));
+						printf("FROM process_all_pages_fv: FSOS: %d\n", get_mhtFirstSplymtLeafOffset());
+						set_isEncounterFSLO(TRUE);
+					}
+				}
+
 				if(g_mhtFileFD > 0) {
 					fo_update_mht_block(g_mhtFileFD, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 				}
@@ -1395,17 +1420,31 @@ void deal_with_remaining_nodes_in_queue(PQNode *pQHeader, PQNode *pQ, int fd){
 				qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 				if(fd > 0) {
 					// record the first supplementary leaf node offset to g_mhtFirstSplymtLeafOffset
+					if(	popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == UNASSIGNED_INDEX && 
+						popped_qnode_ptr->m_level == 0)
+					{
+						popped_qnode_ptr->m_is_supplementary_node = TRUE;
+						popped_qnode_ptr->m_is_zero_node = TRUE;
+						if(!get_isEncounterFSLO()){
+							set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(fd, 0, SEEK_CUR));
+							printf("FROM deal_with_remaining_nodes_in_queue: FSOS: %d\n", get_mhtFirstSplymtLeafOffset());
+							set_isEncounterFSLO(TRUE);
+						}
+					}
+					/*
 					if(!bEnctrFirstSplymtLeaf && 
 						popped_qnode_ptr->m_MHTNode_ptr->m_pageNo == UNASSIGNED_PAGENO && 
 						popped_qnode_ptr->m_level == 0) {
 						g_mhtFirstSplymtLeafOffset = fo_locate_mht_pos(fd, 0, SEEK_CUR);
 						bEnctrFirstSplymtLeaf = TRUE;
 					}
+					*/
 					fo_update_mht_block(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
 				}
 				free(mhtblk_buffer); mhtblk_buffer = NULL;
-
+#ifdef PRINT_INFO_ENABLED
 				print_qnode_info(popped_qnode_ptr);
+#endif
 				deleteQNode(&popped_qnode_ptr);
 				bDequeueExec = TRUE;
 			} // while
@@ -2146,7 +2185,9 @@ int extentTheMHT(int fd)
         fo_update_mht_block(fd, mhtblk_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR);
         free(mhtblk_buffer);
         mhtblk_buffer = NULL;
+#ifdef PRINT_INFO_ENABLED
         print_qnode_info(popped_qnode_ptr);
+#endif
         deleteQNode(&popped_qnode_ptr);
 
         //更新补充节点偏移量

@@ -18,7 +18,7 @@
 
 #define MAX_SIGNED_INT  0x7fffffff
 #define MAX_UNSIGNED_INT    0xffffffff
-#define UNASSIGNED_INDEX    -1
+#define UNASSIGNED_INDEX    MAX_SIGNED_INT
 #define HASH_LEN	32
 #define HASH_STR_LEN    70
 #define ZERO_STR	"00000000000000000000000000000000"	// 32 bytes without considering '\0'
