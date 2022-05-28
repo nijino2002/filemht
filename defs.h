@@ -97,7 +97,7 @@ char* generate_random_string(int str_len);
  *
  * @param[in]  d     the specified d
  *
- * @return     True if the specified d is an integer power of 2, False otherwise.
+ * @return     0 is returned if the specified d is an integer power of 2, other integers otherwise.
  */
 uint32 is_power_of_2(int d);
 

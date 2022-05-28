@@ -423,6 +423,30 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
 void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
 
 /**
+ * @brief      Gets the block number in an MHT file by file name mht_filename.
+ *
+ * @param      mht_filename  The MHT file name
+ * @param[in]  flag          The flag
+ *                     0: only leaf block will be counted (except file header)
+ *                     1: all the block will be counted (except file header)
+ *
+ * @return     The block number in mhtfile by filename.
+ */
+int get_block_num_in_mhtfile_by_filename(char* mht_filename, int flag);
+
+/**
+ * @brief      Gets the block number in an MHT file by file handler mht_fd.
+ *
+ * @param[in]  mht_fd  The MHT file handler
+ * @param[in]  flag    The flag
+ *                     0: only leaf block will be counted (except file header)
+ *                     1: all the block will be counted (except file header)
+ *
+ * @return     The block number in mhtfile by fd.
+ */
+int get_block_num_in_mhtfile_by_fd(int mht_fd, int flag);
+
+/**
  * @brief      Determines whether the specified offset is a valid attribute offset in MHT block buffer.
  *
  * @param[in]  offset  The given offset in MHT block buffer.
@@ -583,5 +607,13 @@ int fo_close_mhtfile(int fd);
 int fo_copy_file(char* srcPath,char *destPath);
 
 void fo_printMHTFile(int fd);
+
+/*---------- End of File Operation Functions  ------------*/
+
+/*--------------- Misc. Functions ----------------*/
+
+
+
+/*--------------- End of Misc. Functions ----------------*/
 
 #endif

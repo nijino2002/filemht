@@ -1746,6 +1746,62 @@ void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk
 	return (void*)(mht_blk_buffer + offset);
 }
 
+int get_block_num_in_mhtfile_by_fd(int mht_fd, int flag){
+	const char* THIS_FUNC_NAME = "get_block_num_in_mhtfile_by_fd";
+	int count = 0;
+	int file_size = 0;
+	char* read_buffer = NULL;
+	int bytes_read = 0;
+
+	if(mht_fd < 3) {
+		debug_print(THIS_FUNC_NAME, "invalid file handler");
+		return 0;
+	}
+
+	if(flag !=0 && flag != 1){
+		debug_print(THIS_FUNC_NAME, "invalid flag value");
+		return 0;
+	}
+
+	read_buffer = (char*) malloc (MHT_BLOCK_SIZE);
+	memset(read_buffer, 0, MHT_BLOCK_SIZE);
+	file_size = fo_locate_mht_pos(mht_fd, 0, SEEK_END);
+	fo_locate_mht_pos(mht_fd, MHT_HEADER_LEN, SEEK_SET);
+	while(bytes_read = fo_read_mht_file(mht_fd, read_buffer, MHT_BLOCK_SIZE, 0, SEEK_CUR) > 0){
+		if(flag == NODELEVEL_LEAF && 
+			*((int*)get_section_addr_in_mht_block_buffer(read_buffer, MHT_BLOCK_SIZE, MHT_BLOCK_OFFSET_LEVEL)) == NODELEVEL_LEAF){
+			count ++;
+		}
+		else if(flag == 1)
+			count ++;
+		else
+			nop();
+		
+		memset(read_buffer, 0, MHT_BLOCK_SIZE);
+	}
+
+	free(read_buffer);
+	
+	return count;
+}
+
+int get_block_num_in_mhtfile_by_filename(char* mht_filename, int flag){
+	const char* THIS_FUNC_NAME = "get_block_num_in_mhtfile_by_filename";
+	int fd = -1;
+	int count = 0;
+
+	fd = fo_open_mhtfile(mht_filename);
+	if(fd < 3) {
+		debug_print(THIS_FUNC_NAME, "Failed to open file");
+		return 0;
+	}
+
+	count = get_block_num_in_mhtfile_by_fd(fd, flag);
+	fo_close_mhtfile(fd);
+
+	return count;
+}
+
 bool is_valid_offset_in_mht_block_buffer(uint32 offset){
 	int i = 0;
 	for(i = 0; i < MHT_BLOCK_ATRRIB_NUM; i++){
