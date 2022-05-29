@@ -28,7 +28,7 @@ int main(int argc, char const *argv[])
     if(argc < 3){
         // 0 Indicates the datasets with prefix "EVAL_DS_xxx" 
         // 1 Indicates the datasets with prefix "EVAL_DS_INSCMN_xxx"
-        printf("Usage: %s [EVAL_DS_xxx / EVAL_DS_INSCMN_xxx] [In/out file name index (0-11)]\n", argv[0]);
+        printf("Usage: %s [EVAL_DS_xxx:0 / EVAL_DS_INSCMN_xxx:1] [In/out file name index (0-11)]\n", argv[0]);
         return 0;
     }
 

@@ -17,28 +17,52 @@
 #include "mhtfile.h"
 #include "mhtfile_ex.h"
 
+#define UTIL_OPT_CMD    "-c"
+
+#define UTIL_CMD_BLOCK_NUM  "n"
+
+int mhtf_util_get_block_num(char* mht_filename, int flag);
+
 int main(int argc, char const *argv[])
 {
-    int mht_block_num = 0;
     int flag = NODELEVEL_LEAF;
 
-    if(argc < 2) {
-        printf("Usage: %s [MHT file name]\n", argv[0]);
+    if(argc < 5) {
+        printf("Usage: %s [OPTIONS] [CMD_CODE] [CMD_PARAM] [MHT file name]\n", argv[0]);
         return 1;
     }
 
-    mht_block_num = get_block_num_in_mhtfile_by_filename((char*)argv[1], flag);
-    if(mht_block_num <= 0){
+    if(strcmp(argv[1], UTIL_OPT_CMD) == 0){
+        if(strcmp(argv[2], UTIL_CMD_BLOCK_NUM) == 0){
+            mhtf_util_get_block_num((char*)argv[4], atoi(argv[3]));
+        }
+        else{
+            printf("Bad command or parammeter.\n");
+        }
+    }
+    else{
+        printf("Bad options.\n");
+    }
+    
+    return 0;
+}
+
+
+int mhtf_util_get_block_num(char* mht_filename, int flag){
+    int bn = 0;
+
+    bn = get_block_num_in_mhtfile_by_filename(mht_filename, flag);
+    if(bn <= 0){
         printf("Failed to get MHT block number.\n");
         return 2;
     }
 
     if(flag == NODELEVEL_LEAF)
-        printf("The number of leaf blocks in MHT file is: %d.\n", mht_block_num);
+        printf("The number of leaf blocks in MHT file is: %d.\n", bn);
     else if(flag == 1)
-        printf("The number of all blocks in MHT file is: %d.\n", mht_block_num);
+        printf("The number of all blocks in MHT file is: %d.\n", bn);
     else
         printf("Invalid flags.\n");
-    
-    return 0;
+
+    return bn;
 }
