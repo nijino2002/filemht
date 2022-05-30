@@ -460,7 +460,9 @@ int locateMHTBlockOffsetByPageNo(int fd, int page_no) {
 	// Now, tmpblk_buf stores the final leaf node block
 	if(page_no != *((int*)(tmpblk_buf + MHT_BLOCK_OFFSET_PAGENO))) {
 		//printf("offset:%d\n", ret_offset);
+#ifdef PRINT_DBGINFO_ENABLED
 		debug_print("locateMHTBlockOffsetByPageNo", "No page found");
+#endif
 		return -1;	// search failed
 	}
 
@@ -468,7 +470,7 @@ int locateMHTBlockOffsetByPageNo(int fd, int page_no) {
 	free(rootnode_buf);
 	free(childblk_buf);
 	free(mhtfilehdr_ptr);
-	printf("offset:%d\n", ret_offset);
+	// printf("offset:%d\n", ret_offset);
 	return ret_offset;
 }
 
@@ -477,7 +479,9 @@ PMHT_BLOCK searchPageByNo(int fd, int page_no) {
 	uchar *block_buf = NULL;
 
 	if(locateMHTBlockOffsetByPageNo(fd, page_no) <= 0){
+#ifdef PRINT_DBGINFO_ENABLED
 		debug_print("searchPageByNo", "No page found");
+#endif
 		return NULL;
 	}
 
@@ -939,7 +943,9 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
     //如果页面已存在，则进行更新操作
     //If the page already exists, perform the update operation
     if(mhtblk_ptr){
+#ifdef PRINT_INFO_ENABLED
         printf("Found page: %d\n", mhtblk_ptr->m_pageNo);
+#endif
         if( updateMHTBlockHashByPageNo(page_no, hash_val, HASH_LEN, fd) <= 0)
         {
             printf("Update failed.\n");
@@ -976,13 +982,15 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
     }
     write_rootNodeOffset = read_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset;
     supplementaryNode_offset = mhtfilehdr_ptr->m_firstSupplementaryLeafOffset;
+#ifdef PRINT_INFO_ENABLED
     printf("rootNodeOffset :%d  supplementaryNode_offset: %d\n", read_rootNodeOffset, supplementaryNode_offset);
+#endif
 
     ////If there is no place to insert, extend the MHT
     if(supplementaryNode_offset == UNASSIGNED_OFFSET)
     {
         supplementaryNode_offset = extentTheMHT(new_fd);
-		write_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		write_rootNodeOffset = mhtfilehdr_ptr->m_rootNodeOffset = get_mhtFileRootNodeOffset();
 		mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
 		mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? UNASSIGNED_OFFSET : supplementaryNode_offset;
 		serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
@@ -1002,7 +1010,9 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
     //将信息进行更新
     //update the information
 	bool insert_isn = FALSE;
+#ifdef PRINT_INFO_ENABLED
     printf("write_offset :%d   read_offset: %d\n",write_offset,read_offset);
+#endif
     memset(write_block_buf, 0, MHT_BLOCK_SIZE);
     fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
     memcpy(write_block_buf + MHT_BLOCK_OFFSET_HASH, hash_val, HASH_LEN);
@@ -1099,7 +1109,9 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
     mhtfilehdr_ptr->m_firstSupplementaryLeafOffset = supplementaryNode_offset == -1? 0 : supplementaryNode_offset;
     serialize_mht_file_header(mhtfilehdr_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
     fo_update_mht_file_header(new_fd, mhthdr_buffer, MHT_HEADER_LEN);
+#ifdef PRINT_INFO_ENABLED
 	fo_printMHTFile(new_fd);
+#endif
 
     fo_close_mhtfile(new_fd);
 	fo_close_mhtfile(fd);

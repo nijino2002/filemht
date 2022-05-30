@@ -18,6 +18,8 @@
 #include "mhtfile_ex.h"
 #include "prfm_eval_defs.h"
 
+#define TEST_ROUND 10
+
 int main(int argc, char const *argv[])
 {
     int index = UNASSIGNED_PAGENO;
@@ -49,7 +51,7 @@ int main(int argc, char const *argv[])
 
     for (i = 0; i < DS_ARRAY_LEN; ++i)
     {
-        for (j = 0; j < TEST_ROUND_ARRAY[i] - 2; ++j)
+        for (j = 0; j < TEST_ROUND; ++j)
         {
             fd = initOpenMHTFileWR((char*)OUTPUT_MHT_FILENAME_ARRAY[i]);
 

@@ -83,7 +83,7 @@ int main(int argc, char const *argv[])
     verify integrity of these 10000 picked blocks in the MHT file */
     for(i = 0; i < TEST_ROUND; i++){
         picked_index = (rand() % ds_block_num[choice]) + 1;
-        printf("Picked index %d\n", picked_index);
+        // printf("Picked index %d\n", picked_index);
         // read a DS block from the DS file
         memset(ds_blk_buf, 0, DS_BLOCK_LEN);
         de_pdata = (char*) malloc (de_data_len);
@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
 
         de_free(pDE, de_data_free);
         lseek(mht_fd, 0, SEEK_SET);
-        println();
+        // println();
     }
 
     fo_close_mhtfile(ds_fd);

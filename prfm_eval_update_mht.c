@@ -18,7 +18,7 @@
 #include "mhtfile_ex.h"
 #include "prfm_eval_defs.h"
 
-#define     TEST_ROUND    1000
+#define     TEST_ROUND    100
 
 int main(int argc, char const *argv[])
 {
@@ -55,7 +55,7 @@ int main(int argc, char const *argv[])
     for (i = 0; i < TEST_ROUND; ++i)
     {
         picked_index = (rand() % DATA_BLOCK_NUM_ARRAY[choice]) + 1;
-        printf("Picked Index: %d\n", picked_index);
+        // printf("Picked Index: %d\n", picked_index);
         new_string = generate_random_string(HASH_LEN);
         memset(new_hash, 0, HASH_LEN);
         generateHashByBuffer_SHA256(new_string, HASH_LEN, new_hash, HASH_LEN);
@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
 
         free(new_string); new_string = NULL;
         lseek(mht_fd, 0, SEEK_SET);
-        println();
+        //println();
     }
 
     printf("The average update time: %Lg us.\n", (long double)acc_timer / (long double)success_count);
