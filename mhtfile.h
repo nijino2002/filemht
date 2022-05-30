@@ -391,6 +391,17 @@ int serialize_mht_file_header(PMHT_FILE_HEADER pmht_file_header,
 int unserialize_mht_block(char *block_buf, uint32 block_buf_len, PMHT_BLOCK *pmht_block);
 
 /**
+ * @brief      estoring an MHT header structure from a given memory buffer.
+ *
+ * @param[in]       header_buf      The header buffer
+ * @param[in]       header_buf_len  The header buffer length
+ * @param[out]      pmht_header     The pointer to the output MHT header structure
+ *
+ * @return     How many bytes has been processed.
+ */
+int unserialize_mht_file_header(char *header_buf, uint32 header_buf_len, PMHT_FILE_HEADER *pmht_header);
+
+/**
  * Directly serialzing a QNode structure into memory buffer (MHT block buffer). 
  * @Author   DiLu
  * @DateTime 2021-11-10T14:16:46+0800
@@ -431,6 +442,8 @@ void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk
  *                     1: all the block will be counted (except file header)
  *
  * @return     The block number in mhtfile by filename.
+ * 
+ * Note: this is a different implementation of the function scan_mht_file_data_blocks in mhtfile_ex.c
  */
 int get_block_num_in_mhtfile_by_filename(char* mht_filename, int flag);
 
@@ -443,6 +456,8 @@ int get_block_num_in_mhtfile_by_filename(char* mht_filename, int flag);
  *                     1: all the block will be counted (except file header)
  *
  * @return     The block number in mhtfile by fd.
+ * 
+ * Note: this is a different implementation of the function scan_mht_file_data_blocks in mhtfile_ex.c
  */
 int get_block_num_in_mhtfile_by_fd(int mht_fd, int flag);
 

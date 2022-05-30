@@ -1648,15 +1648,36 @@ int unserialize_mht_block(char *block_buf,
 	memcpy(tmpblk_ptr->m_Reserved, block_buf + MHT_BLOCK_OFFSET_RSVD, MHT_BLOCK_RSVD_SIZE); ret += MHT_BLOCK_RSVD_SIZE;
 
 	return ret;
+}
 
-	/*
-	pmht_block->m_pageNo = *((int*)p_buf);
-	p_buf += sizeof(int);
-	pmht_block->m_nodeLevel = *((int*)p_buf);
-	p_buf += sizeof(int);
-	memcpy(pmht_block->m_hash, p_buf, HASH_LEN);
-	p_buf += HASH_LEN;
-	*/
+int unserialize_mht_file_header(char *header_buf, 
+								uint32 header_buf_len, 
+								PMHT_FILE_HEADER *pmht_header){
+	const char* THIS_FUNC_NAME = "unserialize_mht_file_header";
+	int ret = 0;
+	PMHT_FILE_HEADER tmp_hdr_ptr = NULL;
+	char* buf_ptr = NULL;
+
+	if(!check_pointer_ex(header_buf, "header_buf", THIS_FUNC_NAME, "Null header_buf") || 
+	   !check_pointer_ex(*pmht_header, "pmht_header", THIS_FUNC_NAME, "Null header pointer for output"))
+		return ret;
+
+	if(header_buf_len != MHT_HEADER_LEN){
+		debug_print(THIS_FUNC_NAME, "Invalid header length");
+		return ret;
+	}
+
+	tmp_hdr_ptr = *pmht_header;
+	buf_ptr = header_buf;
+	memcpy(tmp_hdr_ptr->m_magicStr, buf_ptr, MHT_FILE_MAGIC_STRING_LEN); ret += MHT_FILE_MAGIC_STRING_LEN;
+	buf_ptr += MHT_FILE_MAGIC_STRING_LEN;
+	tmp_hdr_ptr->m_rootNodeOffset = *(int*)buf_ptr; ret += sizeof(uint32);
+	buf_ptr += sizeof(uint32);
+	tmp_hdr_ptr->m_firstSupplementaryLeafOffset = *(int*)buf_ptr; ret += sizeof(uint32);
+	buf_ptr += sizeof(uint32);
+	memcpy(tmp_hdr_ptr->m_Reserved, buf_ptr, MHT_HEADER_RSVD_SIZE); ret += MHT_HEADER_RSVD_SIZE;
+
+	return ret;
 }
 
 int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len) {

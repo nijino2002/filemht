@@ -20,8 +20,10 @@
 #define UTIL_OPT_CMD    "-c"
 
 #define UTIL_CMD_BLOCK_NUM  "n"
+#define UTIL_CMD_FSLO_INFO  "f"
 
 int mhtf_util_get_block_num(char* mht_filename, int flag);
+int mhtf_util_get_header_info(char* mht_filename, int flag);
 
 int main(int argc, char const *argv[])
 {
@@ -35,6 +37,9 @@ int main(int argc, char const *argv[])
     if(strcmp(argv[1], UTIL_OPT_CMD) == 0){
         if(strcmp(argv[2], UTIL_CMD_BLOCK_NUM) == 0){
             mhtf_util_get_block_num((char*)argv[4], atoi(argv[3]));
+        }
+        else if(strcmp(argv[2], UTIL_CMD_FSLO_INFO) == 0){
+            mhtf_util_get_header_info((char*)argv[4], atoi(argv[3]));
         }
         else{
             printf("Bad command or parammeter.\n");
@@ -65,4 +70,38 @@ int mhtf_util_get_block_num(char* mht_filename, int flag){
         printf("Invalid flags.\n");
 
     return bn;
+}
+
+int mhtf_util_get_header_info(char* mht_filename, int flag){
+    const char* THIS_FUNC_NAME = "mhtmhtf_util_get_header_info";
+    int fd = -1;
+    char read_block_buf[MHT_BLOCK_SIZE]={0};
+    char* read_header_buffer = NULL;
+    PMHT_FILE_HEADER mhthdr_ptr = NULL;
+    int fslo_index = 0;
+    int rno_index = 0;
+
+    if(!check_pointer_ex(mht_filename, "mht_filename", THIS_FUNC_NAME, "Null mht_filename")){
+        return -1;
+    }
+
+    read_header_buffer = (char*) malloc (MHT_HEADER_LEN);
+    memset(read_header_buffer, 0, MHT_HEADER_LEN);
+
+    mhthdr_ptr = makeMHTFileHeader();
+    fd = fo_open_mhtfile(mht_filename);
+    fo_read_mht_file_header(fd, read_header_buffer, MHT_HEADER_LEN);
+    unserialize_mht_file_header(read_header_buffer, MHT_HEADER_LEN, &mhthdr_ptr);
+    fo_read_mht_file(fd, read_block_buf, MHT_BLOCK_SIZE, mhthdr_ptr->m_firstSupplementaryLeafOffset, SEEK_SET);
+    fslo_index = *(int*)read_block_buf;
+    fo_read_mht_file(fd, read_block_buf, MHT_BLOCK_SIZE, mhthdr_ptr->m_rootNodeOffset, SEEK_SET);
+    rno_index = *(int*)read_block_buf;
+
+    printf("The RNO is: %d bytes. Index is %x.\n", mhthdr_ptr->m_rootNodeOffset, rno_index);
+    printf("The FSLO is: %d bytes. Index is %x.\n", mhthdr_ptr->m_firstSupplementaryLeafOffset, fslo_index);
+
+    freeMHTFileHeader(&mhthdr_ptr);
+    free(read_header_buffer);
+
+    return 0;
 }
