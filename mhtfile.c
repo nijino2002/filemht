@@ -917,8 +917,8 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
 	int supplementaryNode_offset = -1;
 	uchar *mhthdr_buffer = NULL;
 
-	int fd = MHT_INVALID_FILE_DSCPT;
-    int new_fd = MHT_INVALID_FILE_DSCPT;
+	int fd = MHT_INVALID_FILE_DSCPT;		// The copy of the original file, used as a reference during processing, no modification 
+    int new_fd = MHT_INVALID_FILE_DSCPT;	// The original file used to create new file
 
     if(page_no < 0) {
         debug_print("insertNewPageDisorder", "Invalid page number");
@@ -965,7 +965,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
     //1. Create a temporary file and copy the original file information
     fo_copy_file((char*)mht_filename, (char*)MHT_TMP_FILE_NAME);
 	if( (new_fd = initOpenMHTFileWR((char*)mht_filename))  < 2){
-		printf("Failed to open file %s\n", MHT_TMP_FILE_NAME);
+		printf("Failed to open file %s\n", (char*)mht_filename);
 		exit(0);
 	}
 	if( (fd = fo_open_mhtfile(MHT_TMP_FILE_NAME))  < 2){
@@ -1040,6 +1040,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
         //find the next write location
         memset(write_block_buf, 0, MHT_BLOCK_SIZE);
         fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
+        // the loop stops when a leaf block is found
         while((node_level = *((int*)(write_block_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF)
         {
             memset(write_block_buf, 0, MHT_BLOCK_SIZE);
@@ -1049,7 +1050,8 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
                 break;
             }
             fo_read_mht_block2(new_fd, write_block_buf, MHT_BLOCK_SIZE, write_offset, SEEK_SET);
-        }
+        } //while
+        // Check whether write_offset is beyond the node block
 		if(write_offset >= write_rootNodeOffset)
         {
             break;
@@ -1058,6 +1060,7 @@ int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, con
         //find the leaf node to write
         memset(read_block_buf, 0, MHT_BLOCK_SIZE);
         fo_read_mht_block2(fd, read_block_buf, MHT_BLOCK_SIZE, read_offset, SEEK_SET);
+        // the loop stops when a leaf block is found
         while((node_level = *((int*)(read_block_buf + MHT_BLOCK_OFFSET_LEVEL))) > NODELEVEL_LEAF)
         {
             memset(read_block_buf, 0, MHT_BLOCK_SIZE);
