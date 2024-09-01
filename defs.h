@@ -58,7 +58,9 @@
 #define TEST_STR2	"RRRRRRRR"
 
 typedef unsigned int uint32;
+typedef int int32;
 typedef unsigned short int uint16;
+typedef short int int16;
 typedef unsigned char uchar;
 
 #if (!defined __MINGW32__) && (!defined __MINGW64__)

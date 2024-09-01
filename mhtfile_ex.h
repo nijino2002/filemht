@@ -79,6 +79,23 @@ PMHT_BLOCK searchBlockByIndex(int fd, int index);
  */
 int locateMHTBlockOffsetByIndex(int fd, int index);
 
+/**
+ * @brief      Builds an MHT file from the given data file based on fixed number of leaves.
+ *
+ * @param      in_data_file        In data file
+ * @param      out_mht_file        The out mht file
+ * @param[in]  in_data_block_size  In data block size
+ * @param[in]  is_indata_hashed    Indicates if indata hashed
+ * @param[in]  leaf_num            The leaf number
+ *
+ * @return     The mht file fv by fixed leaves.
+ */
+int buildMHTFileFvByFixedLeaves(char* in_data_file,
+                                char* out_mht_file,
+                                uint32 in_data_block_size,
+                                bool is_indata_hashed,
+                                uint32 leaf_num);
+
 /****************************************************************
  *	                Help Functions
 *****************************************************************/
@@ -185,6 +202,11 @@ void update_mht_block_index_info(int of_fd,
  */
 uint32 scan_mht_file_data_blocks(char* indata_file_name, 
                                  uint32 data_block_size);
+
+
+uint32 extend_mht_file_with_splymt_blk(char* indata_file_name,
+                        uint32 data_block_size,
+                        uint32 data_block_num);
 
 
 #endif
