@@ -615,3 +615,14 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
 
 	return data_block_num;
 }
+
+uint32 extend_mht_file_with_splymt_blk(char* indata_file_name,
+                        uint32 data_block_size,
+                        uint32 data_block_num){
+	const char* THIS_FUNC_NAME = "extend_mht_file_with_splymt_blk";
+	int fd = -1;
+	uint32 ret = 0;
+
+
+	return ret;
+}

@@ -203,7 +203,15 @@ void update_mht_block_index_info(int of_fd,
 uint32 scan_mht_file_data_blocks(char* indata_file_name, 
                                  uint32 data_block_size);
 
-
+/**
+ * @brief      Extends the MHT file with supplementary blocks.
+ *
+ * @param      indata_file_name  The in-data file name
+ * @param[in]  data_block_size   The data block size
+ * @param[in]  data_block_num    The data block number
+ *
+ * @return     { description_of_the_return_value }
+ */
 uint32 extend_mht_file_with_splymt_blk(char* indata_file_name,
                         uint32 data_block_size,
                         uint32 data_block_num);
