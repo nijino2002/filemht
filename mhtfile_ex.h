@@ -204,7 +204,8 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
                                  uint32 data_block_size);
 
 /**
- * @brief      Extends the MHT file with supplementary blocks.
+ * @brief      Extends the MHT file with supplementary blocks 
+ *             such that the MHT has number 
  *
  * @param      indata_file_name  The in-data file name
  * @param[in]  data_block_size   The data block size
