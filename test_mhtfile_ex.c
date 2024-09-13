@@ -29,7 +29,7 @@ int main(int argc, char const *argv[])
 	printf("Number of data block: %d\n", get_data_block_num);
 	printf("Is power of 2: %d\n", is_power_of_2(get_data_block_num));
 	if(is_power_of_2(get_data_block_num) != 0){
-		extendSupplementaryBlock4MHTFile(INDATA_FILENAME,
+		extendSupplementaryBlock4InDataFile(INDATA_FILENAME,
 										data_block_size,
 										cal_the_least_pow2_to_n(data_block_num) - data_block_num,
 										extend_indata_file);

@@ -53,11 +53,11 @@ void buildMHTFileFv_ex(char* in_data_file,
 							   is_indata_hashed);
 }
 
-uint32 extendSupplementaryBlock4MHTFile(char* file_name, 
+uint32 extendSupplementaryBlock4InDataFile(char* file_name, 
 									uint32 data_block_size, 
 									uint32 data_block_num, 
 									extend_func extFuncPtr){
-	const char* THIS_FUNC_NAME = "extendSupplementaryBlock4MHTFile";
+	const char* THIS_FUNC_NAME = "extendSupplementaryBlock4InDataFile";
 
 	return extFuncPtr(file_name, 
 					  data_block_size,
@@ -70,6 +70,14 @@ PMHT_BLOCK searchBlockByIndex(int fd, int index){
 
 int locateMHTBlockOffsetByIndex(int fd, int index){
 	return locateMHTBlockOffsetByPageNo(fd, index);
+}
+
+int buildMHTFileFvByFixedLeaves(char* in_data_file,
+                                char* out_mht_file,
+                                uint32 in_data_block_size,
+                                bool is_indata_hashed,
+                                uint32 leaf_num){
+	return RETCODE_OK;
 }
 
 /****************************************************************
@@ -616,44 +624,3 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
 	return data_block_num;
 }
 
-uint32 extend_mht_file_with_splymt_blk(char* indata_file_name,
-                        uint32 data_block_size,
-                        uint32 data_block_num){
-	const char* THIS_FUNC_NAME = "extend_mht_file_with_splymt_blk";
-	int fd = -1;
-	int open_flags;
-	int index = UNASSIGNED_PAGENO;
-	mode_t file_perms;
-	char* def_str = NULL;
-	char* buffer = NULL;
-	int buffer_len = data_block_size;
-	uint32 ret = 0;
-
-	if(!indata_file_name || data_block_size <= 0 || data_block_num <= 0){
-		printf("Invalid parameters.\n");
-		return 0;
-	}
-
-	open_flags = O_RDWR;
-	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
-
-	fd = open(indata_file_name, open_flags, file_perms);
-	lseek(fd, 0, SEEK_END);
-
-	srand((uint32)time(NULL));
-	def_str = (char*) malloc (data_block_size - sizeof(int));
-	memset(def_str, '0', data_block_size - sizeof(int));
-	buffer = (char*) malloc (buffer_len);
-
-	for(i = 0; i < data_block_num; i++){
-		memset(buffer, 0, buffer_len);
-		memcpy(buffer, &index, sizeof(int));
-		memcpy(buffer + sizeof(int), def_str, data_block_size - sizeof(int));
-		write(fd, buffer, buffer_len);
-	}
-	free(def_str);
-	close(fd);
-
-
-	return ret;
-}

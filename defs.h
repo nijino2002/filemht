@@ -57,6 +57,10 @@
 #define TEST_STR1	"AAAAA"
 #define TEST_STR2	"RRRRRRRR"
 
+#define RETCODE_OK						0x00
+#define RETCODE_FAILED_TO_OPEN_FILE		0x01
+#define RETCODE_FAILED_TO_ALLOC_MEM		0x02
+
 typedef unsigned int uint32;
 typedef int int32;
 typedef unsigned short int uint16;

@@ -53,7 +53,7 @@ int main(int argc, char const *argv[])
     printf("Is power of 2: %d\n", is_power_of_2(get_data_block_num));
 
     if(is_power_of_2(get_data_block_num) != 0){
-        extendSupplementaryBlock4MHTFile((char*)DATASET_FILENAME_ARRAY[choice],
+        extendSupplementaryBlock4InDataFile((char*)DATASET_FILENAME_ARRAY[choice],
                                         data_block_size,
                                         cal_the_least_pow2_to_n(data_block_num) - data_block_num,
                                         extend_indata_file);

@@ -43,16 +43,17 @@ void buildMHTFileFv_ex(char* in_data_file,
                          bool is_indata_hashed);
 
 /**
- * @brief      Extending an MHT file with supplementary blocks
+ * @brief      Extending an in-data file with supplementary blocks to make the file has the number 
+ *              of data blocks satisfying integer power of 2.
  *
- * @param      file_name        The MHT file name
+ * @param      file_name        The in-data file name
  * @param[in]  data_block_size  The supplementary data block size
  * @param[in]  data_block_num   The supplementary data block number
  * @param[in]  extFuncPtr       The function pointer pointing to a given extending function
  *
  * @return     { description_of_the_return_value }
  */
-uint32 extendSupplementaryBlock4MHTFile(char* file_name, 
+uint32 extendSupplementaryBlock4InDataFile(char* file_name, 
                                         uint32 data_block_size, 
                                         uint32 data_block_num, 
                                         extend_func extFuncPtr);
@@ -81,6 +82,8 @@ int locateMHTBlockOffsetByIndex(int fd, int index);
 
 /**
  * @brief      Builds an MHT file from the given data file based on fixed number of leaves.
+ *             Note that the input data file has the number of blocks satisfying integer 
+ *             power of 2.
  *
  * @param      in_data_file        In data file
  * @param      out_mht_file        The out mht file
@@ -202,20 +205,6 @@ void update_mht_block_index_info(int of_fd,
  */
 uint32 scan_mht_file_data_blocks(char* indata_file_name, 
                                  uint32 data_block_size);
-
-/**
- * @brief      Extends the MHT file with supplementary blocks 
- *             such that the MHT has number 
- *
- * @param      indata_file_name  The in-data file name
- * @param[in]  data_block_size   The data block size
- * @param[in]  data_block_num    The data block number
- *
- * @return     { description_of_the_return_value }
- */
-uint32 extend_mht_file_with_splymt_blk(char* indata_file_name,
-                        uint32 data_block_size,
-                        uint32 data_block_num);
 
 
 #endif
