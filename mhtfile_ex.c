@@ -58,10 +58,13 @@ uint32 extendSupplementaryBlock4InDataFile(char* file_name,
 									uint32 data_block_num, 
 									extend_func extFuncPtr){
 	const char* THIS_FUNC_NAME = "extendSupplementaryBlock4InDataFile";
+	uint32 ret_val = RETCODE_OK;
 
-	return extFuncPtr(file_name, 
+	ret_val = extFuncPtr(file_name, 
 					  data_block_size,
 					  data_block_num);
+
+	return ret_val;
 }
 
 PMHT_BLOCK searchBlockByIndex(int fd, int index){
@@ -77,6 +80,32 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
                                 uint32 in_data_block_size,
                                 bool is_indata_hashed,
                                 uint32 leaf_num){
+	const char* THIS_FUNC_NAME = "buildMHTFileFvByFixedLeaves";
+	PQNode pQHdr = NULL;
+	PQNode pQTail = NULL;
+
+	// Check function parameters
+	if(!check_pointer_ex(in_data_file, "in_data_file", THIS_FUNC_NAME, "null in_data_file") ||
+		!check_pointer_ex(out_mht_file, "out_mht_file", THIS_FUNC_NAME, "null out_mht_file"))
+		return RETCODE_ERROR_ARG;
+
+	if(in_data_block_size <= 0){
+		debug_print(THIS_FUNC_NAME, "in_data_block_size cannot be or less than 0");
+		return RETCODE_ERROR_ARG;
+	}
+
+	if (leaf_num <= 0){
+		debug_print(THIS_FUNC_NAME, "leaf_num cannot be or less than 0");
+		return RETCODE_ERROR_ARG;
+	}
+
+	// Check if leaf_num satisfies integer power of 2
+
+	// Extending the in-data file to ensure that the file has the 
+	// number (idbn) of data blocks satisfying the integer time of leaf_num,
+	// such that we can obtain idbn/leaf_num MHT trees.
+
+
 	return RETCODE_OK;
 }
 
@@ -234,13 +263,14 @@ void process_all_elem_fv(char* in_data_file,
 		debug_print(THIS_FUNC_NAME, "open in-data-file failed");
 		return;
 	}
+	// create output mht file
 	out_file_fd = fo_create_mhtfile(out_mht_file);
 	if(out_file_fd < 0){
 		debug_print(THIS_FUNC_NAME, "create out-mht-file failed");
 		return;
 	}
 	fo_close_mhtfile(out_file_fd);
-	//re-open output file for write/read
+	//re-open output mht file for write/read
 	out_file_fd = fo_open_mhtfile(out_mht_file);
 	if(out_file_fd < 0){
 		debug_print(THIS_FUNC_NAME, "re-open out-mht-file failed");

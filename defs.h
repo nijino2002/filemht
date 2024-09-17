@@ -60,6 +60,7 @@
 #define RETCODE_OK						0x00
 #define RETCODE_FAILED_TO_OPEN_FILE		0x01
 #define RETCODE_FAILED_TO_ALLOC_MEM		0x02
+#define RETCODE_ERROR_ARG				0x03
 
 typedef unsigned int uint32;
 typedef int int32;

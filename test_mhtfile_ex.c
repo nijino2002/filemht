@@ -123,4 +123,6 @@ unsigned int extend_indata_file(char* indata_file_name,
 	}
 	free(def_str);
 	close(fd);
+
+	return RETCODE_OK;
 }
