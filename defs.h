@@ -16,6 +16,7 @@
 #endif
 
 
+#define INVALID_FILE_DSCPT -1		// invalid file descriptor value
 #define MAX_SIGNED_INT  0x7fffffff
 #define MAX_UNSIGNED_INT    0xffffffff
 #define UNASSIGNED_INDEX    MAX_SIGNED_INT
@@ -47,7 +48,7 @@
 #define MHT_FILE_MAGIC_STRING       "mhtfile_v1.0"
 #define MHT_FILE_MAGIC_STRING_LEN       16
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
-#define MHT_INVALID_FILE_DSCPT      -1      // invalid file descriptor value
+#define MHT_INVALID_FILE_DSCPT      INVALID_FILE_DSCPT
 #define ASCII_A_POS     65
 #define ASCII_Z_POS     90
 
@@ -61,6 +62,8 @@
 #define RETCODE_FAILED_TO_OPEN_FILE		0x01
 #define RETCODE_FAILED_TO_ALLOC_MEM		0x02
 #define RETCODE_ERROR_ARG				0x03
+#define RETCODE_FAILED_TO_READ_FILE				0x04
+#define RETCODE_ERROR_VAL				0x05
 
 typedef unsigned int uint32;
 typedef int int32;

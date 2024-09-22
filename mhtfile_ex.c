@@ -79,10 +79,16 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
                                 char* out_mht_file,
                                 uint32 in_data_block_size,
                                 bool is_indata_hashed,
-                                uint32 leaf_num){
+                                uint32 leaf_num,
+                                get_in_data_block_func getInDataBlckNumFuncPtr){
 	const char* THIS_FUNC_NAME = "buildMHTFileFvByFixedLeaves";
 	PQNode pQHdr = NULL;
 	PQNode pQTail = NULL;
+	int in_data_file_fd = -1;
+	int out_mhtfile_fd = -1;
+	uint32 output_mhtfile_num = 0;
+	uint32 rmn = 0;
+	uint32 in_data_block_num = 0;
 
 	// Check function parameters
 	if(!check_pointer_ex(in_data_file, "in_data_file", THIS_FUNC_NAME, "null in_data_file") ||
@@ -100,6 +106,33 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 	}
 
 	// Check if leaf_num satisfies integer power of 2
+	if (is_power_of_2(leaf_num) != 0){
+		debug_print(THIS_FUNC_NAME, "leaf_num must be power of 2.");
+		return RETCODE_ERROR_ARG;
+	}
+
+	// Scanning in_data_file to obtain the number of data blocks
+	in_data_block_num = getInDataBlckNumFuncPtr(in_data_file, in_data_block_size);
+	if(in_data_block_num <= 0){
+		debug_print(THIS_FUNC_NAME, "Failed to obtain the number of blocks in in-data file.");
+		return RETCODE_FAILED_TO_READ_FILE;
+	}
+
+	output_mhtfile_num = in_data_block_num / leaf_num;
+	rmn = in_data_block_num % leaf_num;
+	if(output_mhtfile_num == 0 && rmn > 0){	// in-data file only has rmn data blocks
+		;
+	}
+	else if(output_mhtfile_num > 0 && rmn == 0){	// the data blocks in in-data file can just build output_mhtfile_num MHT files
+		;
+	}
+	else if(output_mhtfile_num >0 && rmn > 0){		// there are rmn blocks which are insufficient to build an MHT file
+		;
+	}
+	else{	// error situation
+		debug_print(THIS_FUNC_NAME, "Error output_mhtfile_num or rmn.");
+		return RETCODE_ERROR_VAL;
+	}
 
 	// Extending the in-data file to ensure that the file has the 
 	// number (idbn) of data blocks satisfying the integer time of leaf_num,

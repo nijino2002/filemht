@@ -15,6 +15,7 @@
 #include "mhtfile.h"
 
 typedef uint32 (*extend_func)(char* file_name, uint32 d_block_size, uint32 data_block_num);
+typedef uint32 (*get_in_data_block_func)(char* file_name, uint32 d_block_size);
 
 /****************************************************************
  *	       mhtfile_ex Functions
@@ -97,7 +98,8 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
                                 char* out_mht_file,
                                 uint32 in_data_block_size,
                                 bool is_indata_hashed,
-                                uint32 leaf_num);
+                                uint32 leaf_num,
+                                get_in_data_block_func getInDataBlckNumFuncPtr);
 
 /****************************************************************
  *	                Help Functions
