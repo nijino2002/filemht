@@ -1,10 +1,40 @@
+/**
+ * @defgroup   TEST_MHTFILE_EX test mhtfile ex
+ *
+ * @brief      This program gives an example on how to create an MHT file 
+ * 				based on a randomly generated input data file (abbrv. in-data file).
+ *
+ * @author     Ld
+ * @date       2025
+ */
+
 #include "mhtfile_ex.h"
 
 #define INDATA_FILENAME	"./indata_orig.dat"
 #define OUT_MHT_FILENAME	"./out_mht_file.mf"
 
+/**
+ * @brief      Randomly generating input data file with given number of data blocks.
+ * 				The generated data block has the following structure:
+ * 				int data_index;
+ * 				char* data;		// data length equals to "string_len"
+ *
+ * @param[in]  data_block_num  The data block number
+ * @param[in]  string_len      The data size (in byte) for each block
+ */
 void generate_indata_file_orig(int data_block_num,
 							   int string_len);
+
+/**
+ * @brief      Extends the data blocks in input data file so that the number of the total 
+ * 				data blocks can satisfy integer power of 2.
+ *
+ * @param      indata_file_name  The input data file name
+ * @param[in]  data_block_size   The data block size
+ * @param[in]  data_block_num    The data block number
+ *
+ * @return     { description_of_the_return_value }
+ */
 unsigned int extend_indata_file(char* indata_file_name,
 						unsigned int data_block_size,
 						unsigned int data_block_num);
@@ -25,6 +55,7 @@ int main(int argc, char const *argv[])
 
 	generate_indata_file_orig(data_block_num, string_len);
 	data_block_size = sizeof(int) + string_len;
+	// Here, get_data_block_num == data_block_num
 	get_data_block_num = scan_mht_file_data_blocks(INDATA_FILENAME, data_block_size);
 	printf("Number of data block: %d\n", get_data_block_num);
 	printf("Is power of 2: %d\n", is_power_of_2(get_data_block_num));
@@ -36,14 +67,8 @@ int main(int argc, char const *argv[])
 	}
 	printf("After extension, the number of data block: %d\n", cal_the_least_pow2_to_n(data_block_num));
 
-	/*
-	de_ary = (PDATA_ELEM) malloc(sizeof(DATA_ELEM) * n);
-	for(i = 0; i < n; i ++){
-		de_init(&de_ary[i]);
-		de_ary[i].m_index = i + 1;
-	}
-	process_all_elem(&pQHdr, &pQTail, de_ary, n);
-	*/
+	// Building MHT with the given input data file
+	// The output MHT file will be written in the file named OUT_MHT_FILENAME
 	process_all_elem_fv(INDATA_FILENAME,
 						OUT_MHT_FILENAME,
 						&pQHdr,

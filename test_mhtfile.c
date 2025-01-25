@@ -1,3 +1,14 @@
+/**
+ * @defgroup   TEST_MHTFILE test mhtfile
+ *
+ * @brief      This function is a test to create an MHT by using the fundemental calls,
+ * 				including file and queue operations. We recommend to use buildMHTFileTest_ex and 
+ * 				buildMHTFileFv_ex in mhtfile_ex to create MHTs from given array or file respectively.
+ *
+ * @author     Ld
+ * @date       2025
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,9 +20,10 @@
 extern PQNode g_pQHeader;
 extern PQNode g_pQ;
 
-/*
-Testing functions of queue
- */
+/**
+ * @brief      This function is a test to create an MHT by using the fundemental calls,
+ * 				including file and queue operations.
+ */				
 void test_build_mhtfile();
 
 void test_build_mhtfile(){
