@@ -15,7 +15,7 @@ typedef struct _QNode
 		uint32	m_length;
 	};
 	bool m_is_written;	  /* whether the node has been written to the file (only for the dequeue_sub scenario) */
-	uchar m_is_supplementary_node;	/* temporarily marking whether the node is a supplementary node to build a complete MHT */
+	uchar m_is_supplementary_node;	/* temporarily marking whether the node is a supplementary node to build a full MHT */
 	uchar m_is_zero_node;	/* temporarily marking whether node's hash is hashed zero */
 	uint32 m_RMSTL_page_no;	/* temporarily storing the page number of the right-most sub-tree leaf, used to craete binary search structure */
 	PMHTNode m_MHTNode_ptr;
@@ -122,6 +122,15 @@ PQNode dequeue(PQNode *pQHeader, PQNode *pQ);
  */
 PQNode dequeue_sub(PQNode *pQHeader, PQNode *pQ);
 
+/**
+ * @brief      { This function will dequeue a specific node indicated by parameter "pos". }
+ *
+ * @param      pQHeader  The queue's header
+ * @param      pQ        The queue's tail
+ * @param[in]  pos       The specific node to be dequeued
+ *
+ * @return     The dequeued node pointer.
+ */
 PQNode dequeue_sppos(PQNode *pQHeader, PQNode *pQ, PQNode pos);
 
 /*

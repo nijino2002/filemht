@@ -209,4 +209,8 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
                                  uint32 data_block_size);
 
 
+
+uint32 extend_input_dataset_to_spfc_size(char* indata_file_name,
+                                         uint32 data_block_size,
+                                         uint32 ext_data_block_num);
 #endif

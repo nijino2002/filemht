@@ -120,13 +120,19 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 
 	output_mhtfile_num = in_data_block_num / leaf_num;
 	rmn = in_data_block_num % leaf_num;
-	if(output_mhtfile_num == 0 && rmn > 0){	// in-data file only has rmn data blocks
+	// in-data file only has rmn data blocks
+	// we need to extend the input dataset with leaf_num-rmn data blocks
+	if(output_mhtfile_num == 0 && rmn > 0){
 		;
 	}
-	else if(output_mhtfile_num > 0 && rmn == 0){	// the data blocks in in-data file can just build output_mhtfile_num MHT files
+	// the data blocks in input dataset file can just build output_mhtfile_num MHT files
+	// There is no need to extend the input dataset file
+	else if(output_mhtfile_num > 0 && rmn == 0){
 		;
 	}
-	else if(output_mhtfile_num >0 && rmn > 0){		// there are rmn blocks which are insufficient to build an MHT file
+	// there are rmn blocks which are insufficient to build an MHT file
+	// we can build output_mhtfile_num MHTs, and the left rmn data blocks needs to be extended
+	else if(output_mhtfile_num >0 && rmn > 0){
 		;
 	}
 	else{	// error situation
@@ -405,7 +411,14 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 
 	mht_block_buffer = (uchar*) malloc (MHT_BLOCK_SIZE);
 
-	while(*pQ && (*pQ)->prev && (*pQ)->prev != (*pQHeader) && (*pQ)->m_level == (*pQ)->prev->m_level){
+	/* 1. *pQ && (*pQ)->prev: Pointers *pQ and (*pQ)->prev are not NULL.  
+	 * 2. (*pQ)->prev != (*pQHeader): The previous node of the queue's tail is not queue's header, 
+	 * which means the queue is not empty.
+	 * 3. (*pQ)->m_level == (*pQ)->prev->m_level): queue tail node's level equals to the level of 
+	 * the tail's previous node's level, which means the last two nodes have the same level and 
+	 * can be combined. */
+	while(*pQ && (*pQ)->prev && (*pQ)->prev != (*pQHeader) && 
+		 (*pQ)->m_level == (*pQ)->prev->m_level){
 		lchild_ptr = (*pQ)->prev;
 		rchild_ptr = (*pQ);
 		cbd_qnode_ptr = makeCombinedQNode(lchild_ptr, rchild_ptr);
@@ -415,7 +428,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 		deal_with_nodes_offset_ex(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
 		deal_with_interior_nodes_pageno_ex(cbd_qnode_ptr, lchild_ptr, rchild_ptr);
 
-		tmp_node_ptr = (*pQ)->prev->prev;
+		tmp_node_ptr = (*pQ)->prev->prev; // Currently, (*pQ) is the new combined node
 		popped_qnode_ptr = dequeue_sppos(pQHeader, pQ, tmp_node_ptr);
 		if(!popped_qnode_ptr->m_is_written){
 #ifdef PRINT_INFO_ENABLED
@@ -423,19 +436,12 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 #endif
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
-			/*
-			// record the offset of the first supplementary leaf node
-			if(!get_isEncounterFSLO() && 
-				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
-				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
-				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
-				set_isEncounterFSLO(TRUE);
-			}*/
 			if(popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
 				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
 				// mark the supplementary leaf node
 				popped_qnode_ptr->m_is_supplementary_node = TRUE;
 				popped_qnode_ptr->m_is_zero_node = TRUE;
+				// The popped node is leaf and supplementary node, and get_isEncounterFSLO()==FALSE
 				// record the offset of the first supplementary leaf node
 				if(!get_isEncounterFSLO())
 				{
@@ -461,7 +467,7 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 				printf("UPDATED pQ->prev->prev INDEX\n");
 #endif
 			}
-		}
+		}//else
 
 		tmp_node_ptr = (*pQ)->prev;
 		popped_qnode_ptr = dequeue_sppos(pQHeader, pQ, tmp_node_ptr);
@@ -471,15 +477,6 @@ void combine_nodes_with_same_levels(PQNode *pQHeader,
 #endif
 			memset(mht_block_buffer, 0, mht_block_buffer_len);
 			qnode_to_mht_buffer(popped_qnode_ptr, &mht_block_buffer, mht_block_buffer_len);
-			/*
-			// record the offset of the first supplementary leaf node
-			if(!get_isEncounterFSLO() && 
-				popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
-				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
-				set_mhtFirstSplymtLeafOffset(fo_locate_mht_pos(of_fd, 0, SEEK_CUR));
-				set_isEncounterFSLO(TRUE);
-			}
-			*/
 			if(popped_qnode_ptr->m_level == NODELEVEL_LEAF && 
 				popped_qnode_ptr->m_MHTNode_ptr->m_pageNo >= UNASSIGNED_INDEX){
 				// mark the supplementary leaf node
@@ -687,3 +684,63 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
 	return data_block_num;
 }
 
+
+uint32 extend_input_dataset_to_spfc_size(char* indata_file_name,
+                                         uint32 data_block_size,
+                                         uint32 ext_data_block_num){
+	const char* THIS_FUNC_NAME = "extend_input_dataset_to_spfc_size";
+	// If successfully extended, ret_val==the total data block number of the extended file
+	uint32 ret_val = ext_data_block_num;
+	int fd = -1;
+	int open_flags;
+	mode_t file_perms;
+	int i = 0;
+	int index = UNASSIGNED_PAGENO;
+	char* def_str = NULL;	//default string
+	char* buffer = NULL;
+	int buffer_len = data_block_size;
+
+	if(!indata_file_name || data_block_size <= 0 || ext_data_block_num <= 0){
+		debug_print(THIS_FUNC_NAME, "invalid parameters");
+		ret_val = RETCODE_ERROR_ARG;
+		return 0;
+	}
+
+	open_flags = O_RDWR;
+	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+	fd = open(indata_file_name, open_flags, file_perms);
+	if(fd < 0){
+		debug_print(THIS_FUNC_NAME, "failed to open file");
+		ret_val = RETCODE_FAILED_TO_OPEN_FILE;
+		return ret_val;
+	}
+	lseek(fd, 0, SEEK_END);
+
+	srand((uint32)time(NULL));
+	def_str = (char*) malloc (data_block_size - sizeof(int));
+	if(!def_str){
+		debug_print(THIS_FUNC_NAME, "failed to allocate def_str");
+		ret_val = RETCODE_FAILED_TO_ALLOC_MEM;
+		return ret_val;
+	}
+	memset(def_str, 'X', data_block_size - sizeof(int));
+	buffer = (char*) malloc (buffer_len);
+	if(!buffer){
+		debug_print(THIS_FUNC_NAME, "failed to allocate buffer");
+		ret_val = RETCODE_FAILED_TO_ALLOC_MEM;
+		return ret_val;
+	}
+
+	for(i = 0; i < ext_data_block_num; i++){
+		memset(buffer, 0, buffer_len);
+		memcpy(buffer, &index, sizeof(int));
+		memcpy(buffer + sizeof(int), def_str, data_block_size - sizeof(int));
+		write(fd, buffer, buffer_len);
+	}
+	def_str ? free(def_str) : nop();
+	buffer ? free(buffer) : nop();
+	close(fd);
+
+	return ret_val;
+}

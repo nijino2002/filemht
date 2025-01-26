@@ -17,8 +17,8 @@
 
 
 #define INVALID_FILE_DSCPT -1		// invalid file descriptor value
-#define MAX_SIGNED_INT  0x7fffffff
-#define MAX_UNSIGNED_INT    0xffffffff
+#define MAX_SIGNED_INT  0x7FFFFFFF
+#define MAX_UNSIGNED_INT    0xFFFFFFFF
 #define UNASSIGNED_INDEX    MAX_SIGNED_INT
 #define HASH_LEN	32
 #define HASH_STR_LEN    70
