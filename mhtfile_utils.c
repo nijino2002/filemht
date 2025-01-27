@@ -22,8 +22,12 @@
 #define UTIL_CMD_BLOCK_NUM  "n"
 #define UTIL_CMD_FSLO_INFO  "f"
 
+#define UTIL_CMD_DS_BLOCK_NUM   "dsn"       // dataset block number
+
 int mhtf_util_get_block_num(char* mht_filename, int flag);
 int mhtf_util_get_header_info(char* mht_filename, int flag);
+
+int mhtf_util_get_ds_block_num(char* ds_filename, int flag);
 
 int main(int argc, char const *argv[])
 {
@@ -31,6 +35,13 @@ int main(int argc, char const *argv[])
 
     if(argc < 5) {
         printf("Usage: %s [OPTIONS] [CMD_CODE] [CMD_PARAM] [MHT file name]\n", argv[0]);
+        printf("Instructions:\n");
+        printf("1. OPTIONS: currently, only \'-c\' is available, which means we will use command. \n");
+        printf("2. CMD_CODE: currently, \'n\' and \'f\' are available.\n");
+        printf("\t1) \'n\': show MHT block number. CMD_PARAM==0: show leaf block number; CMD_PARAM==1: show the number of all blocks.\n");
+        printf("\t1) \'f\': show MHT header information. CMD_PARAM is unused, any character is accepted.\n");
+        printf("3. CMD_PARAM: see the instructions in CMD_CODE\n");
+        printf("4. MHT file name: MHT file name with path.\n");
         return 1;
     }
 
@@ -104,4 +115,25 @@ int mhtf_util_get_header_info(char* mht_filename, int flag){
     free(read_header_buffer);
 
     return 0;
+}
+
+/**
+ * @brief      { Get the number of data blocks in the input dataset. 
+ *               Each dataset has the following file structure:
+ *               -------------------------------------------------------------------------------------------------------
+ *               | "ds_v1.0" | data length of each block (DL) | data index 1 | data 1 | data index 2 | data 2 | ...... |
+ *               -------------------------------------------------------------------------------------------------------
+ *               |  16 bytes |         4 bytes                |   4 bytes    |  DL    |     4 bytes  |  DL    | ...... |
+ *               -------------------------------------------------------------------------------------------------------
+ *               }
+ *
+ * @param      ds_filename  The ds filename
+ * @param[in]  flag         The flag
+ *
+ * @return     { description_of_the_return_value }
+ */
+int mhtf_util_get_ds_block_num(char* ds_filename, int flag){
+    int ret_val = 0;
+
+    return ret_val;
 }

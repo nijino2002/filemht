@@ -210,6 +210,15 @@ uint32 scan_mht_file_data_blocks(char* indata_file_name,
 
 
 
+/**
+ * @brief      Extends the input dataset to specific number of data blocks.
+ *
+ * @param      indata_file_name    The input data file name
+ * @param[in]  data_block_size     The data block size
+ * @param[in]  ext_data_block_num  The number of data blocks that needs to be extended
+ *
+ * @return     { The actual number of data blocks that have been extended. In principle, the return value equals to ext_data_block_num. }
+ */
 uint32 extend_input_dataset_to_spfc_size(char* indata_file_name,
                                          uint32 data_block_size,
                                          uint32 ext_data_block_num);
