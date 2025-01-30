@@ -2165,7 +2165,9 @@ int extentTheMHT(int fd)
     return supplementaryNode_offset;
 }
 
+/*--------------------------------------------------*/
 /*----------  File Operation Functions  ------------*/
+/*--------------------------------------------------*/
 
 int fo_create_mhtfile(const char *pathname){
 	int file_descriptor = -1;

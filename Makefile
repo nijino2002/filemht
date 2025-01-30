@@ -1,12 +1,13 @@
 CC_FLAGS = -g
 CC = gcc $(CC_FLAGS)
-OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o dataelem.o
+OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o dataelem.o ds.o
 LIBS = -lm
 
 all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \
 		test_insertpagedisorder test_print_mht_blk test_output_MHT_file \
-		test_file_buffer prfm_eval_gen_dataset prfm_eval_build_mht prfm_eval_build_mht_mmcs \
+		test_ds test_file_buffer \
+		prfm_eval_gen_dataset prfm_eval_build_mht prfm_eval_build_mht_mmcs \
 		test_buildMHTFile_MMCS prfm_eval_data_int_verify prfm_eval_update_mht \
 		prfm_eval_insertsp prfm_eval_insertcmn prfm_eval_gen_dataset_for_insertcmn \
 		prfm_eval_dataset_utils mhtfile_utils
@@ -35,6 +36,9 @@ test_buildMHTFile_MMCS: test_buildMHTFile_MMCS.o
 
 test_mhtfile_ex: test_mhtfile_ex.o
 	$(CC) -o test_mhtfile_ex test_mhtfile_ex.o $(OBJ) $(LIBS) $(CC_FLAGS)
+
+test_ds: test_ds.o
+	$(CC) -o test_ds test_ds.o $(OBJ) $(LIBS) $(CC_FLAGS)
 
 test_insertpageinmht: test_insertpageinmht.o
 	$(CC) -o test_insertpageinmht test_insertpageinmht.o $(OBJ) $(LIBS)
@@ -81,17 +85,17 @@ prfm_eval_dataset_utils: prfm_eval_dataset_utils.o
 mhtfile_utils: mhtfile_utils.o
 	$(CC) -o mhtfile_utils mhtfile_utils.o $(OBJ) $(LIBS)
 
-$(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h dataelem.h
+$(OBJ) : defs.h mhtdefs.h dbqueue.h mhtfile.h mhtfile_ex.h sha256.h dataelem.h ds.h
 
 .PHONY : clean
 clean : 
 	rm -rf testdbfile.db main test_searchpageinmht test_updatehashinmht test_fileio sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht test_insertpagedisorder \
-	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_insertpageinmht.o test_insertpagedisorder.o \
+	main.o test_searchpageinmht.o test_updatehashinmht.o test_fileio.o sha256_test.o test_mhtfile.o test_mhtfile_ex.o test_ds.o test_insertpageinmht.o test_insertpagedisorder.o \
 	test_print_mht_blk test_print_mht_blk.o test_output_MHT_file test_output_MHT_file.o test_file_buffer test_file_buffer.o prfm_eval_gen_dataset prfm_eval_gen_dataset.o \
 	prfm_eval_build_mht.o prfm_eval_build_mht prfm_eval_build_mht_mmcs.o prfm_eval_build_mht_mmcs test_buildMHTFile_MMCS test_buildMHTFile_MMCS.o prfm_eval_data_int_verify.o \
 	prfm_eval_data_int_verify prfm_eval_update_mht.o prfm_eval_update_mht prfm_eval_insertsp.o prfm_eval_insertsp prfm_eval_insertcmn.o prfm_eval_insertcmn \
 	prfm_eval_gen_dataset_for_insertcmn.o prfm_eval_gen_dataset_for_insertcmn prfm_eval_dataset_utils.o prfm_eval_dataset_utils \
-	mhtfile_utils.o mhtfile_utils $(OBJ)
+	mhtfile_utils.o mhtfile_utils myds.ds $(OBJ)
 
 .PHONY : clean-ds
 clean-ds : 
