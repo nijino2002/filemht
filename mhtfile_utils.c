@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include "defs.h"
 #include "dataelem.h"
+#include "ds.h"
 #include "mhtdefs.h"
 #include "dbqueue.h"
 #include "mhtfile.h"
@@ -34,12 +35,12 @@ int main(int argc, char const *argv[])
     int flag = NODELEVEL_LEAF;
 
     if(argc < 5) {
-        printf("Usage: %s [OPTIONS] [CMD_CODE] [CMD_PARAM] [MHT file name]\n", argv[0]);
+        printf("Usage: %s [OPTIONS] [CMD_CODE] [CMD_PARAM] [MHT/DS file name]\n", argv[0]);
         printf("Instructions:\n");
         printf("1. OPTIONS: currently, only \'-c\' is available, which means we will use command. \n");
         printf("2. CMD_CODE: currently, \'n\' and \'f\' are available.\n");
         printf("\t1) \'n\': show MHT block number. CMD_PARAM==0: show leaf block number; CMD_PARAM==1: show the number of all blocks.\n");
-        printf("\t1) \'f\': show MHT header information. CMD_PARAM is unused, any character is accepted.\n");
+        printf("\t2) \'f\': show MHT header information. CMD_PARAM is unused, any character is accepted.\n");
         printf("3. CMD_PARAM: see the instructions in CMD_CODE\n");
         printf("4. MHT file name: MHT file name with path.\n");
         return 1;
@@ -51,6 +52,9 @@ int main(int argc, char const *argv[])
         }
         else if(strcmp(argv[2], UTIL_CMD_FSLO_INFO) == 0){
             mhtf_util_get_header_info((char*)argv[4], atoi(argv[3]));
+        }
+        else if(strcmp(argv[2], UTIL_CMD_DS_BLOCK_NUM) == 0){
+            mhtf_util_get_ds_block_num((char*)argv[4], atoi(argv[3]));
         }
         else{
             printf("Bad command or parammeter.\n");
@@ -133,7 +137,15 @@ int mhtf_util_get_header_info(char* mht_filename, int flag){
  * @return     { description_of_the_return_value }
  */
 int mhtf_util_get_ds_block_num(char* ds_filename, int flag){
-    int ret_val = 0;
+    const char* THIS_FUNC_NAME = "mhtf_util_get_ds_block_num";
+    DS_HEADER ds_header = {{0}, 0, 0};
 
-    return ret_val;
+    if(!ds_verify_ds(ds_filename, &ds_header)){
+        printf("Failed to verify dataset file.\n");
+        return 0;
+    }
+
+    printf("Dataset file %s contains %d blocks.\n", ds_filename, ds_header.m_ds_block_num);
+
+    return 0;
 }

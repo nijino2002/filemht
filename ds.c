@@ -137,12 +137,12 @@ bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr){
 	check_pointer_ex((char*)filename, "filename", THIS_FUNC_NAME, "null file name");
 	check_pointer_ex(pds_hdr, "pds_hdr", THIS_FUNC_NAME, "null ds header structure pointer");
 
-	if(fd = fo_open_mhtfile(filename) < 0){
+	if((fd = fo_open_mhtfile(filename)) < 0){
 		debug_print(THIS_FUNC_NAME, "failed to open file");
 		return FALSE;
 	}
 
-	bytes_read = read(fd, ds_version, DS_VERSION_LEN);
+	bytes_read = read(fd, ds_version, 16);
 	if(strncmp(ds_version, DS_VERSION, strlen(DS_VERSION)) != 0){
 		printf("Dataset file version info. error.\n");
 		return FALSE;
