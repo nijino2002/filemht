@@ -67,7 +67,7 @@ int get_ds_block_num(char* ds_file_name, int block_size){
     read_buffer = (char*) malloc (block_size);
     memset(read_buffer, 0, block_size);
 
-    while(read_byte = fo_read_mht_file(fd, read_buffer, block_size, 0, SEEK_CUR) > 0){
+    while((read_byte = fo_read_mht_file(fd, read_buffer, block_size, 0, SEEK_CUR)) > 0){
         /* do nothing with the buffer */
         count ++;
         memset(read_buffer, 0, block_size);

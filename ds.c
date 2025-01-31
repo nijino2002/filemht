@@ -109,6 +109,66 @@ uint32 ds_create_dataset_by_array(char* filename, void* array_ptr, uint32 array_
 	return ret_val;
 }
 
+uint32 ds_extend_dataset_with_char(char* filename, uint32 add_block_num, char ch){
+	const char* THIS_FUNC_NAME = "ds_extend_dataset_with_char";
+	uint32 ret_val = 0;
+	int fd = -1;
+	int open_flags;
+	mode_t file_perms;
+	int i = 0, j = 0;
+	int index = 0;
+	char* buffer = NULL;
+	int orig_block_size = 0;
+	DS_HEADER ds_hdr = {{0}, 0, 0};
+	int block_written = 0;
+
+	check_pointer_ex((char*)filename, "filename", THIS_FUNC_NAME, "null file name");
+	add_block_num <= 0 ? debug_print(THIS_FUNC_NAME, "add_block_num cannot be <= 0") : nop();
+
+	open_flags = O_RDWR;
+	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+	fd = open(filename, open_flags, file_perms);
+	if(fd < 0){
+		debug_print(THIS_FUNC_NAME, "failed to open file");
+		ret_val = RETCODE_FAILED_TO_OPEN_FILE;
+		return ret_val;
+	}
+
+	// Verifying the original ds file
+	if(!ds_verify_ds(filename, &ds_hdr)){
+		debug_print(THIS_FUNC_NAME, "failed to verify the original ds file");
+		return RETCODE_FAILED_TO_VRFY_DS;
+	}
+
+	buffer = (char*) malloc (ds_hdr.m_ds_block_size);
+	if(!buffer){
+		debug_print(THIS_FUNC_NAME, "failed to allocate buffer");
+		ret_val = RETCODE_FAILED_TO_ALLOC_MEM;
+		return ret_val;
+	}
+
+	// Appending new blocks to the original ds file
+	lseek(fd, 0, SEEK_END);
+	for(i = 0; i < add_block_num; i++){
+		index = ds_hdr.m_ds_block_num + i + 1;
+		memset(buffer, 0, ds_hdr.m_ds_block_size);
+		memcpy(buffer, &index, sizeof(uint32));
+		for(j = 0; j < ds_hdr.m_ds_block_size - sizeof(uint32); j++){	// ds_hdr.m_ds_block_size - sizeof(uint32) refers to the actual value length
+			*(buffer + sizeof(uint32) + j) = ch;
+		}
+		write(fd, buffer, ds_hdr.m_ds_block_size);
+		block_written ++;
+	}
+	free(buffer); buffer = NULL;
+
+	return block_written + ds_hdr.m_ds_block_num;
+}
+
+uint32 ds_extend_dataset_with_zero(char* filename, uint32 add_block_num){
+	return ds_extend_dataset_with_char(filename, add_block_num, 0);
+}
+
 uint32 ds_get_ds_block_num(PDS_HEADER pds_hdr){
 	const char* THIS_FUNC_NAME = "ds_get_ds_block_num";
 
@@ -144,7 +204,7 @@ bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr){
 
 	bytes_read = read(fd, ds_version, 16);
 	if(strncmp(ds_version, DS_VERSION, strlen(DS_VERSION)) != 0){
-		printf("Dataset file version info. error.\n");
+		debug_print(THIS_FUNC_NAME, "dataset file version info. error");
 		return FALSE;
 	}
 	memset(pds_hdr->ds_ver, 0, DS_VERSION_LEN);
@@ -152,7 +212,7 @@ bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr){
 
 	bytes_read = read(fd, &ds_block_len, sizeof(int));
 	if(ds_block_len <= 0){
-		printf("Invalid data block size.\n");
+		debug_print(THIS_FUNC_NAME, "invalid data block size");
 		return FALSE;
 	}
 	pds_hdr->m_ds_block_size = ds_block_len;
@@ -164,6 +224,11 @@ bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr){
 	}
 	while(bytes_read = read(fd, ds_blk_buffer, ds_block_len)){
 		ds_block_num++;
+	}
+
+	if(ds_block_num <= 0){
+		debug_print(THIS_FUNC_NAME, "invalid data block number");
+		return FALSE;
 	}
 	pds_hdr->m_ds_block_num = ds_block_num;
 

@@ -31,7 +31,27 @@ typedef struct {
 void sha256_init(SHA256_CTX *ctx);
 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
 void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
+
 void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_string_len);
+
+/**
+ * @brief      { Calculating a sha256 hash of a file }
+ *
+ * @param      filename        The input file name
+ * @param      out_hash        The output hash buffer pointer
+ */
+void sha256_file(char* filename, BYTE* out_hash);
+
+/**
+ * @brief      Returns substring of the hash string which is composed of the first n characters.
+ *
+ * @param[in]		hash_string  The hash string
+ * @param[in]		out_string   The output string
+ * @param[in]		out_string_len The length of output string
+ * @param[in]		n            The character number from the beginning of the hash string
+ */
+void return_first_n_char(BYTE *hash_string, BYTE *out_string, int out_string_len, int n);
+
 int compare_two_hashes(BYTE* hash1, BYTE* hash2);
 void print_hash_value(BYTE *hash);
 

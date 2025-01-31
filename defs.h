@@ -65,6 +65,7 @@
 #define RETCODE_ERROR_ARG				0x03
 #define RETCODE_FAILED_TO_READ_FILE				0x04
 #define RETCODE_ERROR_VAL				0x05
+#define RETCODE_FAILED_TO_VRFY_DS		0x06
 
 typedef unsigned int uint32;
 typedef int int32;

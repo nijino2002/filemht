@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
 	}
 	//查看插入结果
 
-	uchar *mhtblk_buffer = NULL;
+	char *mhtblk_buffer = NULL;
     PMHT_FILE_HEADER mhtfilehdr_ptr = NULL;
 	PMHT_BLOCK tmpblk_ptr = NULL;
 	tmpblk_ptr = makeMHTBlock();
@@ -36,7 +36,7 @@ int main(int argc, char const *argv[])
 
 	printf("FSLLOS: %d,   RNO:%d\n",mhtfilehdr_ptr->m_firstSupplementaryLeafOffset, mhtfilehdr_ptr->m_rootNodeOffset);
 	//fo_locate_mht_pos(fd, MHT_HEADER_LEN, SEEK_SET);
-	mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+	mhtblk_buffer = (char*) malloc(MHT_BLOCK_SIZE);
 	while(fo_locate_mht_pos(fd, 0, SEEK_CUR) != mhtfilehdr_ptr->m_rootNodeOffset)
 	{
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
@@ -71,7 +71,7 @@ int main(int argc, char const *argv[])
 	}
 	printf("FSLLOS: %d,   RNO:%d\n",mhtfilehdr_ptr->m_firstSupplementaryLeafOffset, mhtfilehdr_ptr->m_rootNodeOffset);
 	fo_locate_mht_pos(fd, MHT_HEADER_LEN, SEEK_SET);
-	mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+	mhtblk_buffer = (char*) malloc(MHT_BLOCK_SIZE);
 	while(fo_locate_mht_pos(fd, 0, SEEK_CUR) != mhtfilehdr_ptr->m_rootNodeOffset)
 	{
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);

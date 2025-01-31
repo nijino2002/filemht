@@ -29,8 +29,8 @@ void test_build_mhtfile();
 void test_build_mhtfile(){
 	PQNode popped_qnode_ptr = NULL;
 	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
-	uchar *mhtblk_buffer = NULL;
-	uchar *mhthdr_buffer = NULL;
+	char *mhtblk_buffer = NULL;
+	char *mhthdr_buffer = NULL;
 
 	//创建mht文件
 	if((g_mhtFileFD = fo_create_mhtfile(MHT_DEFAULT_FILE_NAME)) < 0) {
@@ -63,10 +63,10 @@ void test_build_mhtfile(){
 
 
 	//将root节点写入文件
-	while(popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ)){
+	while((popped_qnode_ptr = dequeue(&g_pQHeader, &g_pQ))){
 		check_pointer(popped_qnode_ptr, "popped_qnode_ptr");
 		// Building MHT blocks based on dequeued nodes, then writing to MHT file.
-		mhtblk_buffer = (uchar*) malloc(MHT_BLOCK_SIZE);
+		mhtblk_buffer = (char*) malloc(MHT_BLOCK_SIZE);
 		memset(mhtblk_buffer, 0, MHT_BLOCK_SIZE);
 		qnode_to_mht_buffer(popped_qnode_ptr, &mhtblk_buffer, MHT_BLOCK_SIZE);
 		// set the first byte of the root buffer to 0x01, which means this buffer stores root node
@@ -83,7 +83,7 @@ void test_build_mhtfile(){
 	} //while
 
 	//初始构造后，更新文件头信息
-	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	mhthdr_buffer = (char*) malloc(MHT_HEADER_LEN);
 	if(mht_file_header_ptr && mhthdr_buffer){
 		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
 		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;

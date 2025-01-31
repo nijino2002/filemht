@@ -24,10 +24,12 @@
 #define UTIL_CMD_FSLO_INFO  "f"
 
 #define UTIL_CMD_DS_BLOCK_NUM   "dsn"       // dataset block number
+#define UTIL_CMD_DS_CREATE_16      "dsc16"       // create new ds file with block size of 16 bytes and random value
 
 int mhtf_util_get_block_num(char* mht_filename, int flag);
 int mhtf_util_get_header_info(char* mht_filename, int flag);
 
+int mhtf_util_ds_create_16(char* ds_filename, int flag);
 int mhtf_util_get_ds_block_num(char* ds_filename, int flag);
 
 int main(int argc, char const *argv[])

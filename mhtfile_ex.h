@@ -14,8 +14,11 @@
 #include "dataelem.h"
 #include "mhtfile.h"
 
+// Old extend function for input dataset
 typedef uint32 (*extend_func)(char* file_name, uint32 d_block_size, uint32 data_block_num);
-typedef uint32 (*get_in_data_block_func)(char* file_name, uint32 d_block_size);
+
+// This function obeys new dataset format indicated in ds.h file.
+typedef uint32 (*extend_inds_func)(char* file_name);
 
 /****************************************************************
  *	       mhtfile_ex Functions
@@ -86,20 +89,17 @@ int locateMHTBlockOffsetByIndex(int fd, int index);
  *             Note that the input data file has the number of blocks satisfying integer 
  *             power of 2.
  *
- * @param      in_data_file        In data file
- * @param      out_mht_file        The out mht file
- * @param[in]  in_data_block_size  In data block size
+ * @param      in_data_file        In data file, which satisfies new dataset criteria indicated in ds.h.
+ * @param      out_mht_file        The out mht file name prefix
  * @param[in]  is_indata_hashed    Indicates if indata hashed
  * @param[in]  leaf_num            The leaf number
  *
  * @return     The mht file fv by fixed leaves.
  */
 int buildMHTFileFvByFixedLeaves(char* in_data_file,
-                                char* out_mht_file,
-                                uint32 in_data_block_size,
+                                char* out_mht_file_prefix,
                                 bool is_indata_hashed,
-                                uint32 leaf_num,
-                                get_in_data_block_func getInDataBlckNumFuncPtr);
+                                uint32 leaf_num);
 
 /****************************************************************
  *	                Help Functions

@@ -175,8 +175,63 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_strin
 	for(i = 0; i < SHA256_BLOCK_SIZE; i++) {
 		sprintf(tmp_string + i * 2, "%02x", hash[i]);
 	}
+	printf("flag1\n");
 
 	memcpy(out_string, tmp_string, SHA256_BLOCK_SIZE * 2);
+	printf("OStr: %s\n", out_string);
+	printf("flag2\n");
+}
+
+void sha256_file(char* filename, BYTE* out_hash){
+	BYTE buf[SHA256_BLOCK_SIZE] = {0};
+	BYTE tmp_buf[4096] = {0};
+	size_t bytes = 0;
+	SHA256_CTX ctx;
+	FILE* fp = NULL;
+
+	fp = fopen(filename, "rb");
+	if (!fp){
+		printf("Unable to open file %s\n.", filename);
+		exit(1);
+	}
+
+	sha256_init(&ctx);
+	while((bytes = fread(tmp_buf, 1, 4096, fp)) != 0){
+		printf("bytes read: %d\n", bytes);
+		sha256_update(&ctx, tmp_buf, bytes);
+		memset(tmp_buf, 0, 4096);
+	}
+	
+	sha256_final(&ctx, buf);
+	memcpy(out_hash, buf, SHA256_BLOCK_SIZE);
+
+	fclose(fp);
+
+	return;
+}
+
+void return_first_n_char(BYTE *hash_string, BYTE *out_string, int out_string_len, int n){
+	int i = 0;
+
+	if(!hash_string || !out_string){
+		printf("Neither hash_string nor out_string can be NULL.\n");
+		return;
+	}
+
+	if(n > 32){
+		printf("n must be less than 32.\n");
+		return;
+	}
+
+	if(n >= out_string_len){
+		printf("n should be less than out_string_len.\n");
+		return;
+	}
+
+	memset(out_string, 0, out_string_len);
+	for(i = 0; i < n; i++){
+		*(out_string + i) = hash_string[i];
+	}
 
 	return;
 }
@@ -206,5 +261,6 @@ void print_hash_value(BYTE *hash){
 	for(i = 0; i < SHA256_BLOCK_SIZE; i++) {
 		printf("%02x  ", hash[i]);
 	}
-	// printf("\n");
+
+	printf("\n");
 }

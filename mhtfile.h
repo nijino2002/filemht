@@ -14,10 +14,10 @@
  * MHT file header, 128 bytes
 */
 typedef struct _MHT_FILE_HEADER {
-    uchar       m_magicStr[MHT_FILE_MAGIC_STRING_LEN];
+    char       m_magicStr[MHT_FILE_MAGIC_STRING_LEN];
     uint32      m_rootNodeOffset;   // (RNO) in bytes
     uint32      m_firstSupplementaryLeafOffset; // (FSLO) in bytes
-    uchar       m_Reserved[MHT_HEADER_RSVD_SIZE];   // 128 - 24 = 104
+    char       m_Reserved[MHT_HEADER_RSVD_SIZE];   // 128 - 24 = 104
 } MHT_FILE_HEADER, *PMHT_FILE_HEADER;
 
 /*
@@ -31,15 +31,15 @@ typedef struct _MHT_BLOCK {
 	int		m_pageNo;
 	int 	m_nodeLevel;
 	char	m_hash[HASH_LEN];
-	uchar 	m_isSupplementaryNode;
-	uchar	m_isZeroNode;
+	char 	m_isSupplementaryNode;
+	char	m_isZeroNode;
 	int 	m_lChildPageNo;
 	int 	m_lChildOffset;
 	int 	m_rChildPageNo;
 	int 	m_rChildOffset;
 	int 	m_parentPageNo;
 	int 	m_parentOffset;
-    uchar   m_Reserved[MHT_BLOCK_RSVD_SIZE];
+    char   m_Reserved[MHT_BLOCK_RSVD_SIZE];
 } MHT_BLOCK, *PMHT_BLOCK;
 
 /*-------------  MHT block processing functions  --------------*/
@@ -184,7 +184,7 @@ returns:
  *
  * 	@return		  		If fails,values <= 0 will be returned.
 */
-int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd);
+int updatePathToRoot(char *update_block_buf, int update_blobk_offset, int fd);
 
 /**
  * @brief      Update the hash value of an MHT block corresponding to the given page number.
@@ -197,7 +197,7 @@ int updatePathToRoot(uchar *update_block_buf, int update_blobk_offset, int fd);
  * @return     If success, the offset of the block that has been updated is returned, 
  *             otherwise, values <= 0 will be returned.
  */
-int updateMHTBlockHashByPageNo(int page_no, uchar *hash_val, uint32 hash_val_len, int fd);
+int updateMHTBlockHashByPageNo(int page_no, char *hash_val, uint32 hash_val_len, int fd);
 
 /**
 Update the MHT information according to the given node block information
@@ -217,7 +217,7 @@ returns:
  *
  *  @return					If fails,values <= 0 will be returned.
 */
-int updateMHTBlockHashByMHTBlock(uchar *mhtblk_buffer, int blobk_offset, int fd);
+int updateMHTBlockHashByMHTBlock(char *mhtblk_buffer, int blobk_offset, int fd);
 
 /**
  * @brief  The special version of insertion that the node being inserted has the index larger than the node with the 
@@ -271,7 +271,7 @@ returns:
  *
  * @return     If the insertion fails, the return value is less than 0.
  */
-int insertNewPageDisorder(int page_no, uchar *hash_val, uint32 hash_val_len, const char* mht_filename);
+int insertNewPageDisorder(int page_no, char *hash_val, uint32 hash_val_len, const char* mht_filename);
 
 
 /*=============================================*/
@@ -334,7 +334,7 @@ Parameters:
 */
 uint32 compute_relative_distance_between_2_nodes(PQNode qnode1_ptr, 
 												 PQNode qnode2_ptr,
-												 uchar pov);
+												 char pov);
 
 /**
  * [deal_with_nodes_offset description]
@@ -366,7 +366,7 @@ void deal_with_interior_nodes_pageno(PQNode parent_ptr, PQNode lchild_ptr, PQNod
  *
  * @return     How many bytes has been processed.
  */
-int serialize_mht_block(PMHT_BLOCK pmht_block, uchar **block_buf, uint32 block_buf_len);
+int serialize_mht_block(PMHT_BLOCK pmht_block, char **block_buf, uint32 block_buf_len);
 
 /**
  * @brief      Serializing an MHT file header into a memory buffer.
@@ -378,7 +378,7 @@ int serialize_mht_block(PMHT_BLOCK pmht_block, uchar **block_buf, uint32 block_b
  * @return     How many bytes has been processed.
  */
 int serialize_mht_file_header(PMHT_FILE_HEADER pmht_file_header, 
-                            uchar **header_buf,
+                            char **header_buf,
                             uint32 header_buf_len);
 
 /**
@@ -412,7 +412,7 @@ int unserialize_mht_file_header(char *header_buf, uint32 header_buf_len, PMHT_FI
  * @param    mht_block_buf_len        [The size of the buffer above]
  * @return                            [How many bytes has been processed.]
  */
-int qnode_to_mht_buffer(PQNode qnode_ptr, uchar **mht_block_buf, uint32 mht_block_buf_len);
+int qnode_to_mht_buffer(PQNode qnode_ptr, char **mht_block_buf, uint32 mht_block_buf_len);
 
 /**
  * Converting a QNode structure into MHT block structure.
@@ -433,7 +433,7 @@ int convert_qnode_to_mht_block(PQNode qnode_ptr, PMHT_BLOCK *mhtblk_ptr);
  *
  * @return     The section address in MHT block buffer.
  */
-void *get_section_addr_in_mht_block_buffer(uchar *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
+void *get_section_addr_in_mht_block_buffer(char *mht_blk_buffer, uint32 mht_blk_buffer_len, uint32 offset);
 
 /**
  * @brief      Gets the block number in an MHT file by file name mht_filename.
@@ -482,7 +482,7 @@ bool is_valid_offset_in_mht_block_buffer(uint32 offset);
  */
 int find_the_first_leaf_splymt_block_by_offset(int fd, int offset);
 
-void print_mht_block(uchar *mht_block_buf, uint32 mht_blk_buffer_len);
+void print_mht_block(char *mht_block_buf, uint32 mht_blk_buffer_len);
 
 /*
 计算父节点哈希值
@@ -500,7 +500,7 @@ Parameters:
  *
  *  @return					If fails,values <= 0 will be returned.
 */
-void cal_parent_nodes_sha256(int fd, uchar *parent_block_buf, int offset);
+void cal_parent_nodes_sha256(int fd, char *parent_block_buf, int offset);
 
 /*
 * 从PMHT_BLOCK生成一个队列节点
@@ -521,7 +521,7 @@ PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN);
 
 /*将从文件中独到的节点信息转换成队列节点
 * Parameters:
-*	uchar *mht_block_buf: 读取到的信息.
+*	char *mht_block_buf: 读取到的信息.
 *	offset:该节点信息的偏移
 * Return:
 *	构造好的节点指针
@@ -534,12 +534,12 @@ PQNode makeQNodebyMHTBlock(PMHT_BLOCK mhtblk_ptr, int RMSTLPN);
  *
  *  @return					A pointer to a new created queue node.
 */
-PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset, int mht_fd);
+PQNode mht_buffer_to_qnode(char *mht_block_buf, int offset, int mht_fd);
 
 /*
 * 利用填充节点完成插入操作时，更新由其引起的页码改变
 * Parameters:
-*	uchar *mht_block_buf: 读取到的信息.
+*	char *mht_block_buf: 读取到的信息.
 *	offset:该节点信息的偏移
 *	fd: 文件描述符
 */
@@ -552,7 +552,7 @@ PQNode mht_buffer_to_qnode(uchar *mht_block_buf, int offset, int mht_fd);
  *
  *  @return					NULL
 */
-void update_interior_nodes_pageno(uchar *mht_block_buf, int offset, int fd);
+void update_interior_nodes_pageno(char *mht_block_buf, int offset, int fd);
 
 /*
 * 将MHT扩充为原有的2倍。
@@ -574,37 +574,37 @@ int fo_create_mhtfile(const char *pathname);
 
 int fo_open_mhtfile(const char *pathname);
 
-ssize_t fo_read_mht_file_header(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_read_mht_file_header(int fd, char *buffer, uint32 buffer_len);
 
-ssize_t fo_update_mht_file_header(int fd, uchar *buffer, uint32 buffer_len);
+ssize_t fo_update_mht_file_header(int fd, char *buffer, uint32 buffer_len);
 
 ssize_t fo_read_mht_block(int fd, 
-							uchar *buffer, 
+							char *buffer, 
 							uint32 buffer_len, 
 							int rel_distance,    // number of blocks from whence
 							int whence);
 
 ssize_t fo_read_mht_block2(int fd, 
-                            uchar *buffer, 
+                            char *buffer, 
                             uint32 buffer_len, 
                             int offset,         // number of bytes from whence
                             int whence);
 
 ssize_t fo_read_mht_file(int fd, 
-                            uchar *buffer, 
+                            char *buffer, 
                             uint32 buffer_len, 
                             int offset,         // number of bytes from whence
                             int whence);
 
 
 ssize_t fo_update_mht_block(int fd, 
-							uchar *buffer, 
+							char *buffer, 
 							uint32 buffer_len, 
 							int rel_distance, 
 							int whence);
 
 ssize_t fo_update_mht_block2(int fd, 
-                            uchar *buffer, 
+                            char *buffer, 
                             uint32 buffer_len, 
                             int offset,         // number of bytes from whence
                             int whence);

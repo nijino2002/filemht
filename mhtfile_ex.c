@@ -1,4 +1,5 @@
 #include "dataelem.h"
+#include "ds.h"
 #include "mhtfile_ex.h"
 #include <math.h>
 
@@ -76,68 +77,50 @@ int locateMHTBlockOffsetByIndex(int fd, int index){
 }
 
 int buildMHTFileFvByFixedLeaves(char* in_data_file,
-                                char* out_mht_file,
-                                uint32 in_data_block_size,
+                                char* out_mht_file_prefix,
                                 bool is_indata_hashed,
-                                uint32 leaf_num,
-                                get_in_data_block_func getInDataBlckNumFuncPtr){
+                                uint32 leaf_num){
 	const char* THIS_FUNC_NAME = "buildMHTFileFvByFixedLeaves";
+	int i = 0;
 	PQNode pQHdr = NULL;
 	PQNode pQTail = NULL;
 	int in_data_file_fd = -1;
 	int out_mhtfile_fd = -1;
-	uint32 output_mhtfile_num = 0;
+	uint32 output_mhtfile_num = 0;	// total output mht file number
 	uint32 rmn = 0;
-	uint32 in_data_block_num = 0;
+	DS_HEADER ds_hdr = {{0}, 0, 0};
 
 	// Check function parameters
 	if(!check_pointer_ex(in_data_file, "in_data_file", THIS_FUNC_NAME, "null in_data_file") ||
-		!check_pointer_ex(out_mht_file, "out_mht_file", THIS_FUNC_NAME, "null out_mht_file"))
+		!check_pointer_ex(out_mht_file_prefix, "out_mht_file_prefix", THIS_FUNC_NAME, "null out_mht_file"))
 		return RETCODE_ERROR_ARG;
-
-	if(in_data_block_size <= 0){
-		debug_print(THIS_FUNC_NAME, "in_data_block_size cannot be or less than 0");
-		return RETCODE_ERROR_ARG;
-	}
 
 	if (leaf_num <= 0){
 		debug_print(THIS_FUNC_NAME, "leaf_num cannot be or less than 0");
 		return RETCODE_ERROR_ARG;
 	}
 
+	// Get input ds info.
+	if(!ds_verify_ds(in_data_file, &ds_hdr)){
+		debug_print(THIS_FUNC_NAME, "failed to verify the input dataset file");
+		return RETCODE_FAILED_TO_VRFY_DS;
+	}
+
 	// Check if leaf_num satisfies integer power of 2
 	if (is_power_of_2(leaf_num) != 0){
 		debug_print(THIS_FUNC_NAME, "leaf_num must be power of 2.");
-		return RETCODE_ERROR_ARG;
+		// reset the leaf_num to the nearest larger number satisfying integer power of 2
+		leaf_num = cal_the_least_pow2_to_n(leaf_num);
 	}
 
-	// Scanning in_data_file to obtain the number of data blocks
-	in_data_block_num = getInDataBlckNumFuncPtr(in_data_file, in_data_block_size);
-	if(in_data_block_num <= 0){
-		debug_print(THIS_FUNC_NAME, "Failed to obtain the number of blocks in in-data file.");
-		return RETCODE_FAILED_TO_READ_FILE;
-	}
+	output_mhtfile_num = ds_hdr.m_ds_block_num / leaf_num;
+	rmn = ds_hdr.m_ds_block_num % leaf_num;
 
-	output_mhtfile_num = in_data_block_num / leaf_num;
-	rmn = in_data_block_num % leaf_num;
-	// in-data file only has rmn data blocks
-	// we need to extend the input dataset with leaf_num-rmn data blocks
-	if(output_mhtfile_num == 0 && rmn > 0){
-		;
-	}
-	// the data blocks in input dataset file can just build output_mhtfile_num MHT files
-	// There is no need to extend the input dataset file
-	else if(output_mhtfile_num > 0 && rmn == 0){
-		;
-	}
-	// there are rmn blocks which are insufficient to build an MHT file
-	// we can build output_mhtfile_num MHTs, and the left rmn data blocks needs to be extended
-	else if(output_mhtfile_num >0 && rmn > 0){
-		;
-	}
-	else{	// error situation
-		debug_print(THIS_FUNC_NAME, "Error output_mhtfile_num or rmn.");
-		return RETCODE_ERROR_VAL;
+	// It indicates there still needs leaf_num - rmn more blocks to 
+	// build integer number of MHT files
+	if(rmn > 0){
+		ds_extend_dataset_with_char(in_data_file, leaf_num - rmn, '0'); // extending block value is "000..."
+		output_mhtfile_num ++;
 	}
 
 	// Extending the in-data file to ensure that the file has the 

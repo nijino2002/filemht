@@ -53,7 +53,7 @@ uint32 ds_create_dataset_random(char* filename, uint32 block_size, uint32 block_
 uint32 ds_create_dataset_by_array(char* filename, void* array_ptr, uint32 array_elem_size, uint32 array_length);
 
 /**
- * @brief      Extends the dataset with additional "block_num" blocks which have random value.
+ * @brief      { Extending the dataset with additional "block_num" blocks which have random value. }
  *
  * @param      filename    The original dataset file name.
  * @param[in]  block_size  The size of each block in the dataset (in byte).
@@ -62,6 +62,29 @@ uint32 ds_create_dataset_by_array(char* filename, void* array_ptr, uint32 array_
  * @return     { The actual block number of the extended dataset will be returned if success, otherwise, 0 will be returned.  }
  */
 uint32 ds_extend_dataset_random(char* filename, uint32 block_size, uint32 block_num);
+
+/**
+ * @brief      { Extending the dataset with additional "block_num" blocks which have specific character value.
+ * 				 Note that the character will be duplicated block_size times as the block value.
+ * 				 E.g., 'R' is selected and block_size = 8, then, the block value will be "RRRRRRRR". }
+ *
+ * @param      filename    The original dataset file name.
+ * @param[in]  add_block_num   The additional block number.
+ * @param[in]  ch          The specific character value.
+ *
+ * @return     { The actual block number of the extended dataset will be returned if success, otherwise, 0 will be returned. }
+ */
+uint32 ds_extend_dataset_with_char(char* filename, uint32 add_block_num, char ch);
+
+/**
+ * @brief      { It has the same functionality as ds_extend_dataset_with_char, but the character value is 0 }
+ *
+ * @param      filename    The original dataset file name.
+ * @param[in]  block_num   The additional block number.
+ *
+ * @return     { The actual block number of the extended dataset will be returned if success, otherwise, 0 will be returned. }
+ */
+uint32 ds_extend_dataset_with_zero(char* filename, uint32 add_block_num);
 
 /**
  * @brief      { Extends the dataset by a given array. }
