@@ -15,6 +15,7 @@ int main(int argc, char const *argv[])
 	const int out_hash_string_len = SHA256_BLOCK_SIZE * 2 + 1;
 	BYTE *out_hash_string = NULL;
 	BYTE *out_hash = NULL;
+	char mhtfile_prefix[20] = {0};
 
 	if(argc < 3){
 		printf("Usage: %s [in_ds_filename] [out_mht_filename_prefix] \n", argv[0]);
@@ -28,8 +29,9 @@ int main(int argc, char const *argv[])
 	sha256_file(argv[1], out_hash);
 	convert_hash_to_string(out_hash, out_hash_string, out_hash_string_len);
 	printf("File hash is %s.\n", out_hash_string);
+	str_substring(out_hash_string, mhtfile_prefix, 0, 16);
+	printf("MHT file prefix: %s.\n", mhtfile_prefix);
 
-	/*
 	ret_val = buildMHTFileFvByFixedLeaves(argv[1], argv[2], FALSE, 16);
 	if(ret_val != 0) {
 		printf("Some errors occurred. ERROR CODE: %d.\n", ret_val);
@@ -37,7 +39,6 @@ int main(int argc, char const *argv[])
 	else {
 		printf("Executing buildMHTFileFvByFixedLeaves() OK.\n");
 	}
-	*/
 
 	free(out_hash_string);
 	free(out_hash);

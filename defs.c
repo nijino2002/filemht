@@ -109,6 +109,23 @@ void print_buffer_in_byte_hex( uchar *buf, uint32 buf_len){
 }
 
 /****************************************************************
+ *                String Functions
+*****************************************************************/
+void str_substring(char *s, char *ss, int pos, int l) {
+    int i = 0;
+    
+    // Move pointer to the pos
+    s += pos;
+  
+    // Copy substring of length l
+    while (l--) *ss++ = *s++;
+    
+    // Null terminate the string
+    *ss = '\0'; 
+}
+
+
+/****************************************************************
  *                Get/Set Functions for Global Variables
 *****************************************************************/
 uint32 get_mhtFileRootNodeOffset(){

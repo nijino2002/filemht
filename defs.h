@@ -162,7 +162,19 @@ void debug_print(const char *from, const char *dbg_msg);
  */
 void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
 
-#endif
+/****************************************************************
+ *                String Functions
+*****************************************************************/
+
+/**
+ * @brief      { Get sub-string }
+ *
+ * @param[in]  s     { Original string }
+ * @param[out] ss    { Output sub-string }
+ * @param[in]  pos   The beginning position
+ * @param[in]  l     { sub-string length }
+ */
+void str_substring(char *s, char *ss, int pos, int l);
 
 
 /****************************************************************
@@ -179,3 +191,5 @@ void set_mhtFileRootNodeOffset(uint32 rno);
 void set_mhtFirstSplymtLeafOffset(uint32 fslo);
 
 void set_isEncounterFSLO(bool is_enc_fslo);
+
+#endif
