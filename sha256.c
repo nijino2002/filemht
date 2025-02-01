@@ -159,7 +159,7 @@ void sha256_final(SHA256_CTX *ctx, BYTE hash[])
 }
 
 void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_string_len) {
-	char tmp_string[SHA256_BLOCK_SIZE * 2] = {0};
+	char tmp_string[SHA256_BLOCK_SIZE * 2 + 1] = {0};
 	int i = 0;
 
 	if(!hash || !out_string){
