@@ -175,11 +175,10 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_strin
 	for(i = 0; i < SHA256_BLOCK_SIZE; i++) {
 		sprintf(tmp_string + i * 2, "%02x", hash[i]);
 	}
-	printf("flag1\n");
 
 	memcpy(out_string, tmp_string, SHA256_BLOCK_SIZE * 2);
-	printf("OStr: %s\n", out_string);
-	printf("flag2\n");
+
+	return;
 }
 
 void sha256_file(char* filename, BYTE* out_hash){
@@ -195,9 +194,14 @@ void sha256_file(char* filename, BYTE* out_hash){
 		exit(1);
 	}
 
+	if(!out_hash){
+		printf("Fatal error: out_hash buffer is null.\n");
+		exit(1);
+	}
+
 	sha256_init(&ctx);
 	while((bytes = fread(tmp_buf, 1, 4096, fp)) != 0){
-		printf("bytes read: %d\n", bytes);
+		// printf("bytes read: %d\n", bytes);
 		sha256_update(&ctx, tmp_buf, bytes);
 		memset(tmp_buf, 0, 4096);
 	}
