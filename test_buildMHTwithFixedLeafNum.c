@@ -17,8 +17,8 @@ int main(int argc, char const *argv[])
 	BYTE *out_hash = NULL;
 	char mhtfile_prefix[20] = {0};
 
-	if(argc < 3){
-		printf("Usage: %s [in_ds_filename] [out_mht_filename_prefix] \n", argv[0]);
+	if(argc < 2){
+		printf("Usage: %s [in_ds_filename]\n", argv[0]);
 		return 0;
 	}
 
@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
 	str_substring(out_hash_string, mhtfile_prefix, 0, 16);
 	printf("MHT file prefix: %s.\n", mhtfile_prefix);
 
-	ret_val = buildMHTFileFvByFixedLeaves(argv[1], argv[2], FALSE, 16);
+	ret_val = buildMHTFileFvByFixedLeaves(argv[1], mhtfile_prefix, FALSE, 16);
 	if(ret_val != 0) {
 		printf("Some errors occurred. ERROR CODE: %d.\n", ret_val);
 	}
