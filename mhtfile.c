@@ -2489,6 +2489,16 @@ int fo_copy_file(char* srcPath,char *destPath)
 	return 0;
 }
 
+void fo_trim_ext_name(char *orig_filename, char *trimmed_filename){
+	const char* THIS_FUNC_NAME = "fo_trim_ext_name";
+	if(!orig_filename || !trimmed_filename){
+		debug_print(THIS_FUNC_NAME, "orig_filename and trimmed_filename cannot be null");
+		return;
+	}
+
+	
+}
+
 void fo_printMHTFile(int fd)
 {
 	char *mhtblk_buffer = NULL;

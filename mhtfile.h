@@ -623,6 +623,8 @@ int fo_close_mhtfile(int fd);
 
 int fo_copy_file(char* srcPath,char *destPath);
 
+void fo_trim_ext_name(char *orig_filename, char *trimmed_filename);
+
 void fo_printMHTFile(int fd);
 
 /*---------- End of File Operation Functions  ------------*/

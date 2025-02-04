@@ -148,7 +148,7 @@ void process_all_elem_fv(char* in_data_file,
  *             Note that the ds file format conforms to the definition in ds.h
  *
  * @param[in]      in_data_file        In data file name
- * @param[in]      out_mht_file        The output MHT file name
+ * @param[in]      out_mht_file        The output MHT file name prefix
  * @param[out]     pQHeader            The queue header
  * @param[out]     pQ                  The queue tail
  * @param[in]      is_indata_hashed    Indicates if the raw data is hashed.
@@ -156,7 +156,7 @@ void process_all_elem_fv(char* in_data_file,
  *                                 it will be hashed during building the MHT file.
  */
 void process_all_elem_fv_new_ds_fmt(char* in_data_file,
-                         char* out_mht_file,
+                         char* out_mht_file_prefix,
                          PQNode *pQHeader,
                          PQNode *pQ,
                          bool is_indata_hashed);

@@ -81,11 +81,15 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
                                 bool is_indata_hashed,
                                 uint32 leaf_num){
 	const char* THIS_FUNC_NAME = "buildMHTFileFvByFixedLeaves";
-	int i = 0;
+	int i = 0, j = 0;
+	char* ptr_ch = NULL;
+	char tmp_buf[MHT_FILENAME_MAXLEN]= ={0};
 	PQNode pQHdr = NULL;
 	PQNode pQTail = NULL;
 	int in_data_file_fd = -1;
 	int out_mhtfile_fd = -1;
+	int out_subds_fd = -1;
+	char out_subds_filename[MHT_FILENAME_MAXLEN] = {0};
 	char out_mht_filename[MHT_FILENAME_MAXLEN] = {0};
 	uint32 output_mhtfile_num = 0;	// total output mht file number
 	uint32 rmn = 0;
@@ -124,9 +128,25 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 		output_mhtfile_num ++;
 	}
 
+	// split the input dataset to output_mhtfile_num sub-datasets, and
 	// build MHTs
+	in_data_file_fd = fo_open_mhtfile(in_data_file);
 	for (i = 0; i < output_mhtfile_num; ++i) {
-		;
+		// construct sub-dataset file name
+		ptr_ch = strrchr(in_data_file, '.');
+		memset(tmp_buf, 0, MHT_FILENAME_MAXLEN);
+		memset(out_subds_filename, 0, MHT_FILENAME_MAXLEN);
+		str_substring(in_data_file, tmp_buf, 0, ptr_ch - in_data_file);
+		sprintf(out_subds_filename, "%s-p%d.ds", tmp_buf, i+1);
+		// create the sub-dataset files
+		out_subds_fd = fo_create_mhtfile(out_subds_filename);
+		write(out_subds_fd, DS_VERSION, DS_VERSION_LEN);
+		write(out_subds_fd, &ds_hdr.m_ds_block_size, sizeof(int));
+		for (j = 0; j < leaf_num; ++j)
+		{
+			/* code */
+		}
+		// process_all_elem_fv_new_ds_fmt();
 	}
 
 
@@ -547,7 +567,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	buf_op_idx += strlen(root_hash_string);
 	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
 	if(rename(old_mht_filename, tmp_out_filename) != 0){
-		debug_print(THIS_FUNC_NAME, "failed to rename the MHT file name");
+		debug_print(THIS_FUNC_NAME, "failed to rename the newly created MHT file name");
 		return;
 	}
 
