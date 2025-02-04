@@ -124,6 +124,22 @@ void str_substring(char *s, char *ss, int pos, int l) {
     *ss = '\0'; 
 }
 
+/****************************************************************
+ *                Memory Op Functions
+*****************************************************************/
+bool memop_alloc_zero(void **mem_ptr, uint32 mem_size){
+	if(*mem_ptr){
+		free(*mem_ptr);
+		*mem_ptr = NULL;
+	}
+
+	if(!(*mem_ptr = malloc(mem_size))){
+		return FALSE;
+	}
+	memset(*mem_ptr, 0, mem_size);
+	return TRUE;
+}
+
 
 /****************************************************************
  *                Get/Set Functions for Global Variables

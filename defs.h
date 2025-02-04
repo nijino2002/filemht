@@ -49,10 +49,12 @@
 #define MHT_FILE_MAGIC_STRING_LEN       16
 #define MHT_DEFAULT_FILE_NAME		"./mhtfile.mf"
 #define MHT_INVALID_FILE_DSCPT      INVALID_FILE_DSCPT
+#define MHT_FILENAME_MAXLEN		256
 #define ASCII_A_POS     65
 #define ASCII_Z_POS     90
 
 #define MHT_TMP_FILE_NAME		"./mhtfile_temp.mf"
+#define MHT_FILE_EXT_NAME		".mf"
 #define BUF_LEN 4096
 
 #define TEST_STR1	"AAAAA"
@@ -176,6 +178,10 @@ void print_buffer_in_byte_hex(uchar *buf, uint32 buf_len);
  */
 void str_substring(char *s, char *ss, int pos, int l);
 
+/****************************************************************
+ *                Memory Op Functions
+*****************************************************************/
+bool memop_alloc_zero(void **mem_ptr, uint32 mem_size);
 
 /****************************************************************
  *                Get/Set Functions for Global Variables

@@ -14,6 +14,7 @@
 
 /****************************** MACROS ******************************/
 #define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
+#define SHA256_STRING_SIZE (SHA256_BLOCK_SIZE * 2 + 1)
 
 /**************************** DATA TYPES ****************************/
 typedef unsigned char BYTE;             // 8-bit byte

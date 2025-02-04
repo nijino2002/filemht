@@ -86,6 +86,7 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 	PQNode pQTail = NULL;
 	int in_data_file_fd = -1;
 	int out_mhtfile_fd = -1;
+	char out_mht_filename[MHT_FILENAME_MAXLEN] = {0};
 	uint32 output_mhtfile_num = 0;	// total output mht file number
 	uint32 rmn = 0;
 	DS_HEADER ds_hdr = {{0}, 0, 0};
@@ -123,9 +124,11 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 		output_mhtfile_num ++;
 	}
 
-	// Extending the in-data file to ensure that the file has the 
-	// number (idbn) of data blocks satisfying the integer time of leaf_num,
-	// such that we can obtain idbn/leaf_num MHT trees.
+	// build MHTs
+	for (i = 0; i < output_mhtfile_num; ++i) {
+		;
+	}
+
 
 
 	return RETCODE_OK;
@@ -371,6 +374,184 @@ void process_all_elem_fv(char* in_data_file,
 	free(mhthdr_buffer);
 	freeMHTFileHeader(&mht_file_header_ptr);
 	fo_close_mhtfile(out_file_fd);
+}
+
+void process_all_elem_fv_new_ds_fmt(char* in_data_file,
+                         char* out_mht_file_prefix,
+                         PQNode *pQHeader,
+                         PQNode *pQ,
+                         bool is_indata_hashed){
+	const char* THIS_FUNC_NAME = "process_all_elem_fv";
+	char *tmp_hash_buffer = NULL;
+	int i = 0;
+	uint32 buf_op_idx = 0;
+	PQNode qnode_ptr = NULL;
+	PQNode cbd_qnode_ptr = NULL;
+	PQNode popped_qnode_ptr = NULL;
+	PQNode lchild_ptr = NULL;
+	PQNode rchild_ptr = NULL;
+	PMHTNode mhtnode_ptr = NULL;
+	PMHT_FILE_HEADER mht_file_header_ptr = NULL;
+	int in_file_fd = -1;
+	int out_file_fd = -1;
+	uint32 bytes_read = 0;
+	char* read_buffer = NULL;
+	uchar* mhthdr_buffer = NULL;
+	DS_HEADER ds_hdr = {{0}, 0, 0};	// stores ds file header info.
+	char ds_file_hash_string[SHA256_STRING_SIZE] = {0};
+	char tmp_out_filename[MHT_FILENAME_MAXLEN] = {0};
+	char old_mht_filename[MHT_FILENAME_MAXLEN] = {0};
+	char root_hash_string[SHA256_STRING_SIZE] = {0};
+	char tmp_hash[SHA256_BLOCK_SIZE] = {0};
+
+	if(*pQHeader != NULL && *pQ != NULL)
+		freeQueue(pQHeader, pQ);
+	else if(*pQHeader){
+		freeQueue2(pQHeader);
+	}
+	else if(*pQ){
+		freeQueue3(pQ);
+	}
+	else{	// both of g_pQHeader and g_pQ are NULL
+		;	// do nothing
+	}
+
+	set_mhtFileRootNodeOffset(UNASSIGNED_OFFSET);
+	set_mhtFirstSplymtLeafOffset(UNASSIGNED_OFFSET);
+	set_isEncounterFSLO(FALSE);
+
+	// construct temporary output MHT file name
+	sha256_file(in_data_file, tmp_hash);
+	convert_hash_to_string(tmp_hash, ds_file_hash_string, SHA256_STRING_SIZE);
+	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
+	buf_op_idx += strlen(out_mht_file_prefix);
+	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
+	buf_op_idx += strlen("-");
+	memcpy(tmp_out_filename + buf_op_idx, ds_file_hash_string, strlen(ds_file_hash_string));
+	buf_op_idx += strlen(ds_file_hash_string);
+	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
+	buf_op_idx += strlen(MHT_FILE_EXT_NAME);
+	memcpy(old_mht_filename, tmp_out_filename, buf_op_idx);  // stores the temporary MHT file name
+
+	// create output mht file
+	out_file_fd = fo_create_mhtfile(tmp_out_filename);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "create out-mht-file failed");
+		return;
+	}
+	fo_close_mhtfile(out_file_fd);
+	//re-open output mht file for write/read
+	out_file_fd = fo_open_mhtfile(tmp_out_filename);
+	if(out_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "re-open out-mht-file failed");
+		return;
+	}
+
+	tmp_hash_buffer = (char*) malloc (SHA256_BLOCK_SIZE);
+	memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+
+	// Moving file pointer to the 128th bytes to 
+	// reserve space for header block
+	if(fo_locate_mht_pos(out_file_fd, MHT_HEADER_LEN, SEEK_CUR) < 0) {
+		debug_print(THIS_FUNC_NAME, "Reserving space for MHT file header failed!");
+		return;
+	}
+
+	// Initializing MHT file header
+	// Header will be updated at the end of building MHT file
+	mht_file_header_ptr = makeMHTFileHeader();
+
+	initQueue(pQHeader, pQ);
+	check_pointer((void*)*pQHeader, "pQHeader");
+	check_pointer((void*)*pQ, "pQ");
+
+	// read ds header info.
+	ds_verify_ds(in_data_file, &ds_hdr);
+	// allocate buffer for read ds file
+	if(!memop_alloc_zero(&read_buffer, ds_hdr.m_ds_block_size)){
+		debug_print(THIS_FUNC_NAME, "failed to allocate read_buffer");
+		return;
+	}
+	// open ds file for building MHT
+	in_file_fd = fo_open_mhtfile(in_data_file);
+	if(in_file_fd < 0){
+		debug_print(THIS_FUNC_NAME, "open in-data-file failed");
+		return;
+	}
+	// move the file pointer to the first data block
+	fo_locate_mht_pos(in_file_fd, DS_VERSION_LEN + DS_BLOCK_SIZE_LEN, SEEK_CUR);
+
+	while((bytes_read = read(in_file_fd, read_buffer, ds_hdr.m_ds_block_size)) > 0){
+		combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
+
+		// making new node and enqueue
+		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
+		if(is_indata_hashed){
+			memcpy(tmp_hash_buffer, (char*)(read_buffer + sizeof(int)), SHA256_BLOCK_SIZE);
+		}
+		else {	// hash indata
+			generateHashByBuffer_SHA256((char*)(read_buffer + sizeof(int)), bytes_read - sizeof(int), tmp_hash_buffer, SHA256_BLOCK_SIZE);
+		}	
+		mhtnode_ptr = makeMHTNode(*(int*)read_buffer, tmp_hash_buffer); 
+		check_pointer_ex((void*)mhtnode_ptr, "mhtnode_ptr", THIS_FUNC_NAME, "null mhtnode_ptr");
+		qnode_ptr = makeQNode(mhtnode_ptr, NODELEVEL_LEAF); 
+		check_pointer_ex((void*)qnode_ptr, "qnode_ptr", THIS_FUNC_NAME, "null qnode_ptr");
+		enqueue(pQHeader, pQ, qnode_ptr);
+		memset(read_buffer, 0, ds_hdr.m_ds_block_size);
+	}
+
+	// deal with the nodes remained in the queue
+	combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
+	// process the root node
+	popped_qnode_ptr = dequeue(pQHeader, pQ);
+	if(popped_qnode_ptr->m_is_written && 
+		popped_qnode_ptr->m_level > NODELEVEL_LEAF){
+		set_mhtFileRootNodeOffset(fo_locate_mht_pos(out_file_fd, 0, SEEK_END) - MHT_BLOCK_SIZE);
+#ifdef PRINT_INFO_ENABLED
+		print_qnode_info(popped_qnode_ptr);
+#endif
+		// store root hash string
+		convert_hash_to_string(popped_qnode_ptr->m_MHTNode_ptr->m_hash, root_hash_string, SHA256_STRING_SIZE);
+		deleteQNode(&popped_qnode_ptr);
+	}
+
+	/***** Updating MHT file header *****/
+	mhthdr_buffer = (uchar*) malloc(MHT_HEADER_LEN);
+	if(mht_file_header_ptr && mhthdr_buffer){
+		mht_file_header_ptr->m_rootNodeOffset = g_mhtFileRootNodeOffset;
+		mht_file_header_ptr->m_firstSupplementaryLeafOffset = g_mhtFirstSplymtLeafOffset;
+		serialize_mht_file_header(mht_file_header_ptr, &mhthdr_buffer, MHT_HEADER_LEN);
+		fo_update_mht_file_header(out_file_fd, mhthdr_buffer, MHT_HEADER_LEN);
+	}
+
+#ifdef PRINT_INFO_ENABLED
+	println();
+	printQueue(*pQHeader);
+#endif
+
+	freeQueue(pQHeader, pQ);
+	free(tmp_hash_buffer);
+	free(read_buffer);
+	free(mhthdr_buffer);
+	freeMHTFileHeader(&mht_file_header_ptr);
+	fo_close_mhtfile(out_file_fd);
+
+	// construct formal file name and rename the output MHT filename
+	memset(tmp_out_filename, 0, MHT_FILENAME_MAXLEN);
+	buf_op_idx = 0;
+	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
+	buf_op_idx ++;
+	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
+	buf_op_idx += strlen("-");
+	memcpy(tmp_out_filename + buf_op_idx, root_hash_string, strlen(root_hash_string));
+	buf_op_idx += strlen(root_hash_string);
+	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
+	if(rename(old_mht_filename, tmp_out_filename) != 0){
+		debug_print(THIS_FUNC_NAME, "failed to rename the MHT file name");
+		return;
+	}
+
+	return;
 }
 
 void combine_nodes_with_same_levels(PQNode *pQHeader, 

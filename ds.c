@@ -231,6 +231,7 @@ bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr){
 		return FALSE;
 	}
 	pds_hdr->m_ds_block_num = ds_block_num;
+	fo_close_mhtfile(fd);
 
 	return TRUE;
 }

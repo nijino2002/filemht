@@ -21,6 +21,7 @@
 #include "mhtfile.h"
 
 #define DS_VERSION_LEN	16
+#define DS_BLOCK_SIZE_LEN  sizeof(int)
 extern const char DS_VERSION[];
 
 typedef struct _ds_header{

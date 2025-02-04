@@ -121,17 +121,18 @@ void process_all_elem(char* out_mht_file,
                       int de_array_len);
 
 /**
- * @brief      Building an MHT file from a given file.
- *             Note that an in-data block consists of two parts:
+ * @brief      Building an MHT file from a given dataset file.
+ *             Note that the input dataset format is old format and has been deprecated.
+ *             The old dataset format only contains data blocks which consists of two parts:
  *             1) The data index (integer);
  *             2) The raw data
  *
- * @param      in_data_file        In data file name
- * @param      out_mht_file        The output MHT file name
- * @param      pQHeader            The queue header
- * @param      pQ                  The queue tail
- * @param[in]  in_data_block_size  In-data block size
- * @param[in]  is_indata_hashed    Indicates if the raw data is hashed.
+ * @param[in]      in_data_file        In data file name
+ * @param[in]      out_mht_file        The output MHT file name
+ * @param[out]     pQHeader            The queue header
+ * @param[out]     pQ                  The queue tail
+ * @param[in]      in_data_block_size  In-data block size
+ * @param[in]      is_indata_hashed    Indicates if the raw data is hashed.
  *                                 If the raw data is un-hashed, 
  *                                 it will be hashed during building the MHT file.
  */
@@ -140,6 +141,24 @@ void process_all_elem_fv(char* in_data_file,
                          PQNode *pQHeader,
                          PQNode *pQ,
                          uint32 in_data_block_size,
+                         bool is_indata_hashed);
+
+/**
+ * @brief      Building an MHT file from a given ds file.
+ *             Note that the ds file format conforms to the definition in ds.h
+ *
+ * @param[in]      in_data_file        In data file name
+ * @param[in]      out_mht_file        The output MHT file name
+ * @param[out]     pQHeader            The queue header
+ * @param[out]     pQ                  The queue tail
+ * @param[in]      is_indata_hashed    Indicates if the raw data is hashed.
+ *                                 If the raw data is un-hashed, 
+ *                                 it will be hashed during building the MHT file.
+ */
+void process_all_elem_fv_new_ds_fmt(char* in_data_file,
+                         char* out_mht_file,
+                         PQNode *pQHeader,
+                         PQNode *pQ,
                          bool is_indata_hashed);
 
 /**
