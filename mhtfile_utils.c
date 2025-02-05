@@ -43,6 +43,7 @@ int main(int argc, char const *argv[])
         printf("2. CMD_CODE: currently, \'n\' and \'f\' are available.\n");
         printf("\t1) \'n\': show MHT block number. CMD_PARAM==0: show leaf block number; CMD_PARAM==1: show the number of all blocks.\n");
         printf("\t2) \'f\': show MHT header information. CMD_PARAM is unused, any character is accepted.\n");
+        printf("\t3) \'dsn\': show dataset block number.\n");
         printf("3. CMD_PARAM: see the instructions in CMD_CODE\n");
         printf("4. MHT file name: MHT file name with path.\n");
         return 1;
@@ -115,7 +116,12 @@ int mhtf_util_get_header_info(char* mht_filename, int flag){
     rno_index = *(int*)read_block_buf;
 
     printf("The RNO is: %d bytes. Index is %x.\n", mhthdr_ptr->m_rootNodeOffset, rno_index);
-    printf("The FSLO is: %d bytes. Index is %x.\n", mhthdr_ptr->m_firstSupplementaryLeafOffset, fslo_index);
+    if(mhthdr_ptr->m_firstSupplementaryLeafOffset == UNASSIGNED_OFFSET){
+        printf("The FSLO is: UNASSIGNED_OFFSET (there is no supplementary block in ds). Index is null.\n");
+    }
+    else {
+        printf("The FSLO is: %d bytes. Index is %x.\n", mhthdr_ptr->m_firstSupplementaryLeafOffset, fslo_index);
+    }
 
     freeMHTFileHeader(&mhthdr_ptr);
     free(read_header_buffer);

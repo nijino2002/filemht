@@ -151,7 +151,7 @@ uint32 ds_extend_dataset_with_char(char* filename, uint32 add_block_num, char ch
 	// Appending new blocks to the original ds file
 	lseek(fd, 0, SEEK_END);
 	for(i = 0; i < add_block_num; i++){
-		index = ds_hdr.m_ds_block_num + i + 1;
+		index = UNASSIGNED_INDEX;	// the added block's index is default to UNASSIGNED_INDEX
 		memset(buffer, 0, ds_hdr.m_ds_block_size);
 		memcpy(buffer, &index, sizeof(uint32));
 		for(j = 0; j < ds_hdr.m_ds_block_size - sizeof(uint32); j++){	// ds_hdr.m_ds_block_size - sizeof(uint32) refers to the actual value length

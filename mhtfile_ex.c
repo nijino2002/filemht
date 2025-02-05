@@ -513,9 +513,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	fo_locate_mht_pos(in_file_fd, DS_VERSION_LEN + DS_BLOCK_SIZE_LEN, SEEK_CUR);
 
 	while((bytes_read = read(in_file_fd, read_buffer, ds_hdr.m_ds_block_size)) > 0){
-		printf("in-while combine_nodes_with_same_levels.\n");
 		combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
-		println();
 
 		// making new node and enqueue
 		memset(tmp_hash_buffer, 0, SHA256_BLOCK_SIZE);
@@ -534,7 +532,6 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	}
 
 	// deal with the nodes remained in the queue
-	printf("last combine_nodes_with_same_levels.\n");
 	combine_nodes_with_same_levels(pQHeader, pQ, out_file_fd);
 	// process the root node
 	popped_qnode_ptr = dequeue(pQHeader, pQ);
@@ -581,6 +578,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	memcpy(tmp_out_filename + buf_op_idx, root_hash_string, strlen(root_hash_string));
 	buf_op_idx += strlen(root_hash_string);
 	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
+	printf("formal_mht_filename = %s\n", tmp_out_filename);
 	if(rename(old_mht_filename, tmp_out_filename) != 0){
 		debug_print(THIS_FUNC_NAME, "failed to rename the newly created MHT file name");
 		return;
