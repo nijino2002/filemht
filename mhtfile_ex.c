@@ -146,7 +146,7 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 		out_subds_fd = fo_create_mhtfile(out_subds_filename);
 		write(out_subds_fd, DS_VERSION, DS_VERSION_LEN);
 		write(out_subds_fd, &ds_hdr.m_ds_block_size, sizeof(int));
-		for (j = 0; j < leaf_num; ++j)
+		for (j = 0; j < leaf_num; ++j)  // create sub-ds files that contain leaf_num blocks
 		{
 			memset(read_buf, 0, ds_hdr.m_ds_block_size + 1);
 			read(in_data_file_fd, read_buf, ds_hdr.m_ds_block_size);
@@ -158,7 +158,7 @@ int buildMHTFileFvByFixedLeaves(char* in_data_file,
 									   &pQHdr,
 									   &pQTail,
 									   FALSE);
-	} // for i
+	} // for i, output MHT file number
 	fo_close_mhtfile(in_data_file_fd);
 
 	return RETCODE_OK;
