@@ -264,11 +264,11 @@ void freeQueue3(PQNode *pQ) {
 	if(!(*pQ))
 		return;
 	tmp_ptr = *pQ;
-	do{
-		tmp_ptr = tmp_ptr->prev;
-		if(tmp_ptr->prev == NULL)	//tmp_ptr == pQHeader
+	while (tmp_ptr){
+		if(tmp_ptr->prev == NULL)	// reach to the queue header
 			break;
-	}while(tmp_ptr);
+		tmp_ptr = tmp_ptr->prev;
+	}
 
 	return freeQueue2(&tmp_ptr);
 }

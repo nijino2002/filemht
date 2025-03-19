@@ -41,7 +41,7 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_strin
  * @param      filename        The input file name
  * @param      out_hash        The output hash buffer pointer
  */
-void sha256_file(char* filename, BYTE* out_hash);
+void sha256_file(const char* filename, BYTE* out_hash);
 
 /**
  * @brief      Returns substring of the hash string which is composed of the first n characters.

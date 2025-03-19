@@ -181,7 +181,7 @@ void convert_hash_to_string(BYTE *hash, BYTE *out_string, unsigned int out_strin
 	return;
 }
 
-void sha256_file(char* filename, BYTE* out_hash){
+void sha256_file(const char* filename, BYTE* out_hash){
 	BYTE buf[SHA256_BLOCK_SIZE] = {0};
 	BYTE tmp_buf[4096] = {0};
 	size_t bytes = 0;

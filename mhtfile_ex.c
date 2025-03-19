@@ -76,7 +76,7 @@ int locateMHTBlockOffsetByIndex(int fd, int index){
 	return locateMHTBlockOffsetByPageNo(fd, index);
 }
 
-int buildMHTFileFvByFixedLeaves(char* in_data_file,
+int buildMHTFileFvByFixedLeaves(const char* in_data_file,
                                 char* out_mht_file_prefix,
                                 bool is_indata_hashed,
                                 uint32 leaf_num){
