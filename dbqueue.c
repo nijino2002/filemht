@@ -221,18 +221,21 @@ void freeQueue(PQNode *pQHeader, PQNode *pQ) {
 	if(!(*pQHeader))
 		return;
 	tmp_ptr = (*pQHeader)->next;
-	if(!tmp_ptr){
+	if(tmp_ptr == NULL){	// *pQ == *pQHeader
 		free(*pQHeader);
 		*pQHeader = NULL;
+		*pQ = NULL;
 		return;
 	}
-	while(tmp_ptr = dequeue(pQHeader, pQ)){
+	while(tmp_ptr = dequeue(pQHeader, pQ)){	// when *pQ == *pQHeader dequeue returns NULL
 		tmp_ptr->m_MHTNode_ptr != NULL ? free(tmp_ptr->m_MHTNode_ptr) : nop();
 		free(tmp_ptr);
 		tmp_ptr = NULL;
 	}
 	free(*pQHeader);
 	*pQHeader = NULL;
+	*pQ = NULL;
+	
 	return;
 }
 
@@ -240,10 +243,9 @@ void freeQueue2(PQNode *pQHeader){
 	PQNode tmp_ptr = NULL;
 	if(!(*pQHeader))
 		return;
-	tmp_ptr = (*pQHeader)->next;
-	if(!tmp_ptr){
+
+	if((*pQHeader)->next == NULL){		//implies that only pQHeader left
 		free(*pQHeader);
-		*pQHeader = NULL;
 		return;
 	}
 	while(tmp_ptr = ((*pQHeader)->next)){

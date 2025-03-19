@@ -463,6 +463,18 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	buf_op_idx += strlen(MHT_FILE_EXT_NAME);
 	memcpy(old_mht_filename, tmp_out_filename, buf_op_idx);  // stores the temporary MHT file name
 	printf("old_mht_filename = %s\n", old_mht_filename);
+	// create directory
+	#ifdef _WIN32
+	// Windows特定的代码
+	#else
+	// Linux或类Unix特定的代码
+	if (mkdir(out_mht_file_prefix, 0777) == 0) {
+        printf("Successfully created MHT directory %s\n", out_mht_file_prefix);
+    } else {
+        printf("Failed to create MHT directory %s.\n", out_mht_file_prefix); // 打印错误信息
+		exit(1);
+    }
+	#endif
 
 	// create output mht file
 	out_file_fd = fo_create_mhtfile(old_mht_filename);
