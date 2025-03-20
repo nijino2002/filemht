@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
 	str_substring(out_hash_string, mhtfile_prefix, 0, 16);
 	printf("MHT file prefix: %s.\n", mhtfile_prefix);
 
-	ret_val = buildMHTFileFvByFixedLeaves(argv[1], mhtfile_prefix, FALSE, 16);
+	ret_val = buildMHTFileFvByFixedLeaves(argv[1], mhtfile_prefix, FALSE, 250);
 	if(ret_val != 0) {
 		printf("Some errors occurred. ERROR CODE: %d.\n", ret_val);
 	}

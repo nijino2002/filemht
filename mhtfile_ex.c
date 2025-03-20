@@ -2,6 +2,7 @@
 #include "ds.h"
 #include "mhtfile_ex.h"
 #include <math.h>
+#include <dirent.h>
 
 /****************************************************************
  *                       MHT File Operations
@@ -81,7 +82,9 @@ int buildMHTFileFvByFixedLeaves(const char* in_data_file,
                                 bool is_indata_hashed,
                                 uint32 leaf_num){
 	const char* THIS_FUNC_NAME = "buildMHTFileFvByFixedLeaves";
+	const char* TMP_DS_DIR = "./tmpds/";
 	int i = 0, j = 0;
+	DIR *dir = NULL;
 	char* ptr_ch = NULL;
 	char tmp_buf[MHT_FILENAME_MAXLEN] = {0};
 	char* read_buf = NULL;
@@ -131,7 +134,24 @@ int buildMHTFileFvByFixedLeaves(const char* in_data_file,
 	}
 	printf("output_mhtfile_num = %d\n", output_mhtfile_num);
 
-	// split the input dataset to output_mhtfile_num sub-datasets, and
+	// make dir tmpds
+	#ifdef _WIN32
+	// Windows特定的代码
+	#else
+	// Linux或类Unix特定的代码
+	dir = opendir(TMP_DS_DIR);
+	if(dir == NULL){	// dir TMP_DS_DIR does not exist.
+		if (mkdir(TMP_DS_DIR, 0777) == 0) {
+			printf("Successfully created MHT directory %s\n", TMP_DS_DIR);
+			closedir(dir);
+		} else {
+			printf("Failed to create MHT directory %s.\n", TMP_DS_DIR); // 打印错误信息
+			exit(1);
+		}
+	}
+	#endif
+
+	// split the input dataset into output_mhtfile_num sub-datasets, and
 	// build MHTs
 	in_data_file_fd = fo_open_mhtfile(in_data_file);	// open input dataset file
 	fo_locate_mht_pos(in_data_file_fd, DS_VERSION_LEN + sizeof(int), SEEK_CUR);	// locate file pointer to the first data block
@@ -141,7 +161,7 @@ int buildMHTFileFvByFixedLeaves(const char* in_data_file,
 		memset(tmp_buf, 0, MHT_FILENAME_MAXLEN);
 		memset(out_subds_filename, 0, MHT_FILENAME_MAXLEN);
 		str_substring(in_data_file, tmp_buf, 0, ptr_ch - in_data_file);
-		sprintf(out_subds_filename, "%s-p%d.ds", tmp_buf, i+1);
+		sprintf(out_subds_filename, "%s%s-p%d.ds",TMP_DS_DIR, tmp_buf, i+1);
 		// create the sub-dataset files
 		out_subds_fd = fo_create_mhtfile(out_subds_filename);
 		write(out_subds_fd, DS_VERSION, DS_VERSION_LEN);
@@ -414,6 +434,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	const char* THIS_FUNC_NAME = "process_all_elem_fv";
 	char *tmp_hash_buffer = NULL;
 	int i = 0;
+	DIR *dir = NULL;
 	uint32 buf_op_idx = 0;
 	PQNode qnode_ptr = NULL;
 	PQNode cbd_qnode_ptr = NULL;
@@ -455,12 +476,16 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	// Windows特定的代码
 	#else
 	// Linux或类Unix特定的代码
-	if (mkdir(out_mht_file_prefix, 0777) == 0) {
-        printf("Successfully created MHT directory %s\n", out_mht_file_prefix);
-    } else {
-        printf("Failed to create MHT directory %s.\n", out_mht_file_prefix); // 打印错误信息
-		exit(1);
-    }
+	dir = opendir(out_mht_file_prefix);
+	if(dir == NULL){	// dir out_mht_file_prefix does not exist.
+		if (mkdir(out_mht_file_prefix, 0777) == 0) {
+			printf("Successfully created MHT directory %s\n", out_mht_file_prefix);
+			closedir(dir);
+		} else {
+			printf("Failed to create MHT directory %s.\n", out_mht_file_prefix); // 打印错误信息
+			exit(1);
+		}
+	}
 	#endif
 
 	// construct temporary output MHT file name (full path name)
@@ -468,7 +493,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	sha256_file(in_data_file, tmp_hash);
 	convert_hash_to_string(tmp_hash, ds_file_hash_string, SHA256_STRING_SIZE);
 	// constructing temporary mht file name, which will be renamed at the end
-	sprintf(tmp_out_filename, "%s/%s-%s.%s", out_mht_file_prefix, out_mht_file_prefix, ds_file_hash_string, MHT_FILE_EXT_NAME);
+	sprintf(tmp_out_filename, "%s/%s-%s%s", out_mht_file_prefix, out_mht_file_prefix, ds_file_hash_string, MHT_FILE_EXT_NAME);
 	/*
 	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
 	buf_op_idx += strlen(out_mht_file_prefix);
@@ -589,7 +614,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 
 	// construct the final formal file name and rename the output MHT filename
 	memset(tmp_out_filename, 0, MHT_FILENAME_MAXLEN);
-	sprintf(tmp_out_filename, "%s/%s-%s.%s", out_mht_file_prefix, out_mht_file_prefix, root_hash_string, MHT_FILE_EXT_NAME);
+	sprintf(tmp_out_filename, "%s/%s-%s%s", out_mht_file_prefix, out_mht_file_prefix, root_hash_string, MHT_FILE_EXT_NAME);
 	/*
 	buf_op_idx = 0;
 	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
