@@ -450,20 +450,7 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	set_mhtFirstSplymtLeafOffset(UNASSIGNED_OFFSET);
 	set_isEncounterFSLO(FALSE);
 
-	// construct temporary output MHT file name
-	sha256_file(in_data_file, tmp_hash);
-	convert_hash_to_string(tmp_hash, ds_file_hash_string, SHA256_STRING_SIZE);
-	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
-	buf_op_idx += strlen(out_mht_file_prefix);
-	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
-	buf_op_idx += strlen("-");
-	memcpy(tmp_out_filename + buf_op_idx, ds_file_hash_string, strlen(ds_file_hash_string));
-	buf_op_idx += strlen(ds_file_hash_string);
-	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
-	buf_op_idx += strlen(MHT_FILE_EXT_NAME);
-	memcpy(old_mht_filename, tmp_out_filename, buf_op_idx);  // stores the temporary MHT file name
-	printf("old_mht_filename = %s\n", old_mht_filename);
-	// create directory
+	// create directory named out_mht_file_prefix at the current dir
 	#ifdef _WIN32
 	// Windows特定的代码
 	#else
@@ -475,6 +462,26 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 		exit(1);
     }
 	#endif
+
+	// construct temporary output MHT file name (full path name)
+	// generating ds file hash string
+	sha256_file(in_data_file, tmp_hash);
+	convert_hash_to_string(tmp_hash, ds_file_hash_string, SHA256_STRING_SIZE);
+	// constructing temporary mht file name, which will be renamed at the end
+	sprintf(tmp_out_filename, "%s/%s-%s.%s", out_mht_file_prefix, out_mht_file_prefix, ds_file_hash_string, MHT_FILE_EXT_NAME);
+	/*
+	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
+	buf_op_idx += strlen(out_mht_file_prefix);
+	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
+	buf_op_idx += strlen("-");
+	memcpy(tmp_out_filename + buf_op_idx, ds_file_hash_string, strlen(ds_file_hash_string));
+	buf_op_idx += strlen(ds_file_hash_string);
+	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
+	buf_op_idx += strlen(MHT_FILE_EXT_NAME);
+	*/
+	memcpy(old_mht_filename, tmp_out_filename, strlen(tmp_out_filename));  // stores the temporary MHT file name
+	printf("old_mht_filename = %s\n", old_mht_filename);
+	
 
 	// create output mht file
 	out_file_fd = fo_create_mhtfile(old_mht_filename);
@@ -580,8 +587,10 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	freeMHTFileHeader(&mht_file_header_ptr);
 	fo_close_mhtfile(out_file_fd);
 
-	// construct formal file name and rename the output MHT filename
+	// construct the final formal file name and rename the output MHT filename
 	memset(tmp_out_filename, 0, MHT_FILENAME_MAXLEN);
+	sprintf(tmp_out_filename, "%s/%s-%s.%s", out_mht_file_prefix, out_mht_file_prefix, root_hash_string, MHT_FILE_EXT_NAME);
+	/*
 	buf_op_idx = 0;
 	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
 	buf_op_idx += strlen(out_mht_file_prefix);
@@ -589,7 +598,8 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	buf_op_idx += strlen("-");
 	memcpy(tmp_out_filename + buf_op_idx, root_hash_string, strlen(root_hash_string));
 	buf_op_idx += strlen(root_hash_string);
-	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
+	*/
+	memcpy(tmp_out_filename, tmp_out_filename, strlen(tmp_out_filename));
 	printf("formal_mht_filename = %s\n", tmp_out_filename);
 	if(rename(old_mht_filename, tmp_out_filename) != 0){
 		debug_print(THIS_FUNC_NAME, "failed to rename the newly created MHT file name");
