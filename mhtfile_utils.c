@@ -1,7 +1,7 @@
 /**
  * @defgroup   Performance Evaluations
  *
- * @brief      This file implements a utility tool for MHT file.
+ * @brief      This file implements a utility tool for MHT and the dataset (new format) files.
  *
  * @author     Lu Di
  * @date       2022.5.28
@@ -24,7 +24,9 @@
 #define UTIL_CMD_FSLO_INFO  "f"
 
 #define UTIL_CMD_DS_BLOCK_NUM   "dsn"       // dataset block number
-#define UTIL_CMD_DS_CREATE_16      "dsc16"       // create new ds file with block size of 16 bytes and random value
+#define UTIL_CMD_DS_CREATE_O      "dsc-o"       // create new ds file with ordered indices and random values, CMD_PARAM indicates the block size
+#define UTIL_CMD_DS_CREATE_R      "dsc-r"       // create new ds file with random indices & values, CMD_PARAM indicates the block size
+#define UTIL_CMD_DS_ORDERING        "dso"       // ordering the data blocks in ds file ascendingly
 
 int mhtf_util_get_block_num(char* mht_filename, int flag);
 int mhtf_util_get_header_info(char* mht_filename, int flag);
