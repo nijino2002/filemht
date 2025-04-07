@@ -1,5 +1,5 @@
 /**
- * @defgroup   Performance Evaluations
+ * @defgroup   Utilities
  *
  * @brief      This file implements a utility tool for MHT and the dataset (new format) files.
  *
@@ -158,4 +158,13 @@ int mhtf_util_get_ds_block_num(char* ds_filename, int flag){
     printf("Dataset file %s contains %d blocks.\n", ds_filename, ds_header.m_ds_block_num);
 
     return 0;
+}
+
+
+int mhtf_util_create_ds_dso(char* ds_filename, 
+                            unsigned short int block_num, 
+                            unsigned short int block_size){
+    int ret_val = 0;    // if success, the actual block number will be returned
+
+    return ret_val;
 }
