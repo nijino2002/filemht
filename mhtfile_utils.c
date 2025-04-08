@@ -17,6 +17,7 @@
 #include "dbqueue.h"
 #include "mhtfile.h"
 #include "mhtfile_ex.h"
+#include "string_ex.h"
 
 #define UTIL_OPT_CMD    "-c"
 
@@ -160,11 +161,89 @@ int mhtf_util_get_ds_block_num(char* ds_filename, int flag){
     return 0;
 }
 
+int mhtf_util_create_ds_dso(char* ds_filename, char* params){
+    int ret_val = RETCODE_ERROR_OCCURRED;
+    int i = 0;
+    char** tokens = NULL;
+    int tokens_num = 0;
+    int dtblk_num = 0;
+    int dtblk_size = 0;
+    DS_HEADER ds_hdr = {{0}, 0, 0};
 
-int mhtf_util_create_ds_dso(char* ds_filename, 
-                            unsigned short int block_num, 
-                            unsigned short int block_size){
+    if(ds_filename == NULL || params == NULL){
+        printf("Neither ds_filename nor params can be NULL.\n");
+        return ret_val;
+    }
+
+    tokens = strex_split(params, '|', &tokens_num);
+    if(tokens == NULL){
+        printf("Failed to split \"params\".\n");
+        return ret_val;
+    }
+
+    if(tokens_num > 2){
+        printf("\"params\" only accepts \"x|y\" format.\n");
+        return ret_val;
+    }
+
+    dtblk_size = atoi(tokens[0]);
+    dtblk_num = atoi(tokens[1]);
+    if(dtblk_size == 0 || dtblk_num == 0){
+        printf("block size or block number in \"params\" are invalid.\n");
+        return ret_val;
+    }
+
+    if(ds_create_dataset_random(ds_filename, dtblk_size, dtblk_num) == RETCODE_OK){
+		printf("Successfully created dataset file %s.\n", ds_filename);
+        ret_val = RETCODE_OK;
+    }
+	else{
+		printf("Failed to create dataset file: %s.\n", ds_filename);
+        ret_val = RETCODE_ERROR_OCCURRED;
+    }
+
+	if(!ds_verify_ds(ds_filename, &ds_hdr)){
+		printf("Failed to verify ds file: %s.\n", ds_filename);
+        ret_val = RETCODE_FAILED_TO_VRFY_DS;
+	}
+	else {
+		printf("Successfully verify ds file: %s.\n", ds_filename);
+        ret_val = RETCODE_OK;
+	}
+
+    return ret_val;
+}
+
+/**
+ * @brief [Executive Function] Create a dataset (in new format) file for experimental purpose, 
+ *        in which the indices of data blocks are in random order.
+ * 
+ * @param ds_filename The new created dataset file name
+ * @param block_num The number of data blocks that the dataset file contains
+ * @param block_size The size (in byte) of each data block
+ * @return int 
+ */
+int mhtf_util_create_ds_dso_exec(char* ds_filename, 
+                            int block_num, 
+                            int block_size){
     int ret_val = 0;    // if success, the actual block number will be returned
 
     return ret_val;
+}
+
+/**
+ * @brief [Executive Function] Create a dataset (in new format) file for experimental purpose, 
+ *        in which the indices of data blocks are in order (ascended order).
+ * 
+ * @param ds_filename The new created dataset file name
+ * @param block_num The number of data blocks that the dataset file contains
+ * @param block_size The size (in byte) of each data block
+ * @return int 
+ */
+int mhtf_util_create_ds_ord_exec(char* ds_filename, 
+                            int block_num, 
+                            int block_size){
+    int ret_val = 0;    // if success, the actual block number will be returned
+
+return ret_val;
 }
