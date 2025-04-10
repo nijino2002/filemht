@@ -34,6 +34,8 @@ int mhtf_util_get_header_info(char* mht_filename, int flag);
 
 int mhtf_util_ds_create_16(char* ds_filename, int flag);
 int mhtf_util_get_ds_block_num(char* ds_filename, int flag);
+int mhtf_util_create_ds_dso(char* ds_filename, char* params);
+int mhtf_util_create_ds_ord(char* ds_filename, char* params);
 
 int main(int argc, char const *argv[])
 {
@@ -43,10 +45,13 @@ int main(int argc, char const *argv[])
         printf("Usage: %s [OPTIONS] [CMD_CODE] [CMD_PARAM] [MHT/DS file name]\n", argv[0]);
         printf("Instructions:\n");
         printf("1. OPTIONS: currently, only \'-c\' is available, which means we will use command. \n");
-        printf("2. CMD_CODE: currently, \'n\' and \'f\' are available.\n");
+        printf("2. CMD_CODE: currently, \'n\', \'f\', \'dsn\', \'dsc-o\', \'dsc-r\' and \'dso\' are available.\n");
         printf("\t1) \'n\': show MHT block number. CMD_PARAM==0: show leaf block number; CMD_PARAM==1: show the number of all blocks.\n");
         printf("\t2) \'f\': show MHT header information. CMD_PARAM is unused, any character is accepted.\n");
         printf("\t3) \'dsn\': show dataset block number.\n");
+        printf("\t4) \'dsc-o\': create a dataset file with ordered indices (ascending). CMD_PARAM format: data_block_size:data_block_num\n");
+        printf("\t5) \'dsc-r\': create a dataset file with random indices. CMD_PARAM format: data_block_size:data_block_num\n");
+        printf("\t6) \'dso\': arrange the data blocks of a dataset file to be index-ordered (ascending).\n");
         printf("3. CMD_PARAM: see the instructions in CMD_CODE\n");
         printf("4. MHT file name: MHT file name with path.\n");
         return 1;
@@ -61,6 +66,16 @@ int main(int argc, char const *argv[])
         }
         else if(strcmp(argv[2], UTIL_CMD_DS_BLOCK_NUM) == 0){
             mhtf_util_get_ds_block_num((char*)argv[4], atoi(argv[3]));
+        }
+        else if(strcmp(argv[2], UTIL_CMD_DS_CREATE_O) == 0){
+            if(mhtf_util_create_ds_ord((char*)argv[4], (char*)argv[3]) != RETCODE_OK){
+                printf("Failed to create dataset file with ordered indices.");
+            }
+        }
+        else if(strcmp(argv[2], UTIL_CMD_DS_CREATE_R) == 0){
+            if(mhtf_util_create_ds_dso((char*)argv[4], (char*)argv[3]) != RETCODE_OK){
+                printf("Failed to create dataset file with random indices.");
+            }
         }
         else{
             printf("Bad command or parammeter.\n");
@@ -161,6 +176,14 @@ int mhtf_util_get_ds_block_num(char* ds_filename, int flag){
     return 0;
 }
 
+/**
+ * @brief Create a dataset (in new format) file for experimental purpose, 
+ *        in which the indices of data blocks are in random order.
+ * 
+ * @param ds_filename The new created dataset file name
+ * @param params In format of "data_block_size:data_block_num"
+ * @return int If success, 0 will be returned, otherwise, non-zero value is returned.
+ */
 int mhtf_util_create_ds_dso(char* ds_filename, char* params){
     int ret_val = RETCODE_ERROR_OCCURRED;
     int i = 0;
@@ -175,14 +198,14 @@ int mhtf_util_create_ds_dso(char* ds_filename, char* params){
         return ret_val;
     }
 
-    tokens = strex_split(params, '|', &tokens_num);
+    tokens = strex_split(params, ':', &tokens_num);
     if(tokens == NULL){
         printf("Failed to split \"params\".\n");
         return ret_val;
     }
 
     if(tokens_num > 2){
-        printf("\"params\" only accepts \"x|y\" format.\n");
+        printf("\"params\" only accepts \"x:y\" format.\n");
         return ret_val;
     }
 
@@ -215,35 +238,62 @@ int mhtf_util_create_ds_dso(char* ds_filename, char* params){
 }
 
 /**
- * @brief [Executive Function] Create a dataset (in new format) file for experimental purpose, 
- *        in which the indices of data blocks are in random order.
- * 
- * @param ds_filename The new created dataset file name
- * @param block_num The number of data blocks that the dataset file contains
- * @param block_size The size (in byte) of each data block
- * @return int 
- */
-int mhtf_util_create_ds_dso_exec(char* ds_filename, 
-                            int block_num, 
-                            int block_size){
-    int ret_val = 0;    // if success, the actual block number will be returned
-
-    return ret_val;
-}
-
-/**
- * @brief [Executive Function] Create a dataset (in new format) file for experimental purpose, 
+ * @brief Create a dataset (in new format) file for experimental purpose, 
  *        in which the indices of data blocks are in order (ascended order).
  * 
  * @param ds_filename The new created dataset file name
- * @param block_num The number of data blocks that the dataset file contains
- * @param block_size The size (in byte) of each data block
- * @return int 
+ * @param params In format of "data_block_size:data_block_num"
+ * @return int If success, 0 will be returned, otherwise, non-zero value is returned.
  */
-int mhtf_util_create_ds_ord_exec(char* ds_filename, 
-                            int block_num, 
-                            int block_size){
-    int ret_val = 0;    // if success, the actual block number will be returned
+int mhtf_util_create_ds_ord(char* ds_filename, char* params){
+    int ret_val = RETCODE_ERROR_OCCURRED;
+    int i = 0;
+    char** tokens = NULL;
+    int tokens_num = 0;
+    int dtblk_num = 0;
+    int dtblk_size = 0;
+    DS_HEADER ds_hdr = {{0}, 0, 0};
 
-return ret_val;
+    if(ds_filename == NULL || params == NULL){
+        printf("Neither ds_filename nor params can be NULL.\n");
+        return ret_val;
+    }
+
+    tokens = strex_split(params, ':', &tokens_num);
+    if(tokens == NULL){
+        printf("Failed to split \"params\".\n");
+        return ret_val;
+    }
+
+    if(tokens_num > 2){
+        printf("\"params\" only accepts \"x:y\" format.\n");
+        return ret_val;
+    }
+
+    dtblk_size = atoi(tokens[0]);
+    dtblk_num = atoi(tokens[1]);
+    if(dtblk_size == 0 || dtblk_num == 0){
+        printf("block size or block number in \"params\" are invalid.\n");
+        return ret_val;
+    }
+
+    if(ds_create_dataset_random(ds_filename, dtblk_size, dtblk_num) == RETCODE_OK){
+		printf("Successfully created dataset file %s.\n", ds_filename);
+        ret_val = RETCODE_OK;
+    }
+	else{
+		printf("Failed to create dataset file: %s.\n", ds_filename);
+        ret_val = RETCODE_ERROR_OCCURRED;
+    }
+
+	if(!ds_verify_ds(ds_filename, &ds_hdr)){
+		printf("Failed to verify ds file: %s.\n", ds_filename);
+        ret_val = RETCODE_FAILED_TO_VRFY_DS;
+	}
+	else {
+		printf("Successfully verify ds file: %s.\n", ds_filename);
+        ret_val = RETCODE_OK;
+	}
+
+    return ret_val;
 }
