@@ -615,15 +615,6 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	// construct the final formal file name and rename the output MHT filename
 	memset(tmp_out_filename, 0, MHT_FILENAME_MAXLEN);
 	sprintf(tmp_out_filename, "%s/%s-%s%s", out_mht_file_prefix, out_mht_file_prefix, root_hash_string, MHT_FILE_EXT_NAME);
-	/*
-	buf_op_idx = 0;
-	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
-	buf_op_idx += strlen(out_mht_file_prefix);
-	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
-	buf_op_idx += strlen("-");
-	memcpy(tmp_out_filename + buf_op_idx, root_hash_string, strlen(root_hash_string));
-	buf_op_idx += strlen(root_hash_string);
-	*/
 	memcpy(tmp_out_filename, tmp_out_filename, strlen(tmp_out_filename));
 	printf("formal_mht_filename = %s\n", tmp_out_filename);
 	if(rename(old_mht_filename, tmp_out_filename) != 0){

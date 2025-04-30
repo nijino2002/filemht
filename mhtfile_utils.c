@@ -19,6 +19,8 @@
 #include "mhtfile_ex.h"
 #include "string_ex.h"
 
+#define SPLIT_CHAR  ':'
+
 #define UTIL_OPT_CMD    "-c"
 
 #define UTIL_CMD_BLOCK_NUM  "n"
@@ -198,14 +200,14 @@ int mhtf_util_create_ds_dso(char* ds_filename, char* params){
         return ret_val;
     }
 
-    tokens = strex_split(params, ':', &tokens_num);
+    tokens = strex_split(params, SPLIT_CHAR, &tokens_num);
     if(tokens == NULL){
-        printf("Failed to split \"params\".\n");
+        printf("Failed to split \"params\". The splitting character must be \'%c\'.\n", SPLIT_CHAR);
         return ret_val;
     }
 
     if(tokens_num > 2){
-        printf("\"params\" only accepts \"x:y\" format.\n");
+        printf("\"params\" only accepts \"x%cy\" format.\n", SPLIT_CHAR);
         return ret_val;
     }
 
@@ -216,7 +218,7 @@ int mhtf_util_create_ds_dso(char* ds_filename, char* params){
         return ret_val;
     }
 
-    if(ds_create_dataset_random(ds_filename, dtblk_size, dtblk_num) == RETCODE_OK){
+    if(ds_create_dataset_random_dso(ds_filename, dtblk_size, dtblk_num) == RETCODE_OK){
 		printf("Successfully created dataset file %s.\n", ds_filename);
         ret_val = RETCODE_OK;
     }
@@ -259,14 +261,14 @@ int mhtf_util_create_ds_ord(char* ds_filename, char* params){
         return ret_val;
     }
 
-    tokens = strex_split(params, ':', &tokens_num);
+    tokens = strex_split(params, SPLIT_CHAR, &tokens_num);
     if(tokens == NULL){
-        printf("Failed to split \"params\".\n");
+        printf("Failed to split \"params\". The splitting character must be \'%c\'.\n", SPLIT_CHAR);
         return ret_val;
     }
 
     if(tokens_num > 2){
-        printf("\"params\" only accepts \"x:y\" format.\n");
+        printf("\"params\" only accepts \"x%cy\" format.\n", SPLIT_CHAR);
         return ret_val;
     }
 

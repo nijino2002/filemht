@@ -57,6 +57,87 @@ uint32 ds_create_dataset_random(char* filename, uint32 block_size, uint32 block_
 	return ret_val;
 }
 
+uint32 ds_create_dataset_random_dso(char* filename, uint32 block_size, uint32 block_num){
+	const char* THIS_FUNC_NAME = "ds_create_dataset_random";
+	uint32 ret_val = RETCODE_OK;
+	int fd = -1;
+	int open_flags;
+	mode_t file_perms;
+	int i = 0;
+	int index = 0;
+	char* gen_str = NULL;
+	char* buffer = NULL;
+	int buffer_len = sizeof(int) + block_size;
+	uint32* shuffled_indices = NULL;
+
+	check_pointer_ex((char*)filename, "filename", THIS_FUNC_NAME, "null file name");
+	block_num <= 0 || block_size <= 0 ? debug_print(THIS_FUNC_NAME, "neither block_num nor block_size can be <= 0") : nop();
+
+	open_flags = O_CREAT | O_WRONLY | O_TRUNC;
+	file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+	fd = open(filename, open_flags, file_perms);
+	if(fd < 0){
+		debug_print(THIS_FUNC_NAME, "failed to open file");
+		ret_val = RETCODE_FAILED_TO_OPEN_FILE;
+		return ret_val;
+	}
+
+	buffer = (char*) malloc(buffer_len);
+	if(!buffer){
+		debug_print(THIS_FUNC_NAME, "failed to allocate buffer");
+		ret_val = RETCODE_FAILED_TO_ALLOC_MEM;
+		close(fd);
+		return ret_val;
+	}
+
+	shuffled_indices = (uint32*) malloc(sizeof(uint32) * block_num);
+	if(!shuffled_indices){
+		debug_print(THIS_FUNC_NAME, "failed to allocate index array");
+		ret_val = RETCODE_FAILED_TO_ALLOC_MEM;
+		free(buffer); buffer = NULL;
+		close(fd);
+		return ret_val;
+	}
+
+	// initialize random seed
+	srand(time(NULL));
+
+	// initialize and shuffle indices
+	for(i = 0; i < block_num; i++) {
+		shuffled_indices[i] = i + 1;
+	}
+	for(i = block_num - 1; i > 0; i--) {
+		int j = rand() % (i + 1);
+		uint32 tmp = shuffled_indices[i];
+		shuffled_indices[i] = shuffled_indices[j];
+		shuffled_indices[j] = tmp;
+	}
+
+	// write ds version info
+	write(fd, DS_VERSION, DS_VERSION_LEN);
+
+	// write ds block length (DL)
+	write(fd, &buffer_len, sizeof(int));
+
+	// write blocks in shuffled order
+	for(i = 0; i < block_num; i++){
+		index = shuffled_indices[i];
+		memset(buffer, 0, buffer_len);
+		memcpy(buffer, &index, sizeof(uint32));
+		gen_str = generate_random_string(block_size);
+		memcpy(buffer + sizeof(uint32), gen_str, block_size);
+		free(gen_str); gen_str = NULL;
+		write(fd, buffer, buffer_len);
+	}
+
+	free(shuffled_indices); shuffled_indices = NULL;
+	free(buffer); buffer = NULL;
+	close(fd);
+
+	return ret_val;
+}
+
 uint32 ds_create_dataset_by_array(char* filename, void* array_ptr, uint32 array_elem_size, uint32 array_length){
 	const char* THIS_FUNC_NAME = "ds_create_dataset_by_array";
 	uint32 ret_val = 0;
