@@ -1,7 +1,7 @@
 CC_FLAGS = -g
 CC = gcc $(CC_FLAGS)
-OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o dataelem.o ds.o string_ex.o
-LIBS = -lm
+OBJ = defs.o mhtdefs.o dbqueue.o mhtfile.o mhtfile_ex.o sha256.o dataelem.o ds.o string_ex.o qnode_pool.o
+LIBS = -lm -lpthread
 
 all : main test_searchpageinmht test_updatehashinmht test_fileio \
 		sha256_test test_mhtfile test_mhtfile_ex test_insertpageinmht \

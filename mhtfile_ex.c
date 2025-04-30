@@ -494,16 +494,6 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	convert_hash_to_string(tmp_hash, ds_file_hash_string, SHA256_STRING_SIZE);
 	// constructing temporary mht file name, which will be renamed at the end
 	sprintf(tmp_out_filename, "%s/%s-%s%s", out_mht_file_prefix, out_mht_file_prefix, ds_file_hash_string, MHT_FILE_EXT_NAME);
-	/*
-	memcpy(tmp_out_filename + buf_op_idx, out_mht_file_prefix, strlen(out_mht_file_prefix));
-	buf_op_idx += strlen(out_mht_file_prefix);
-	memcpy(tmp_out_filename + buf_op_idx, "-", strlen("-"));
-	buf_op_idx += strlen("-");
-	memcpy(tmp_out_filename + buf_op_idx, ds_file_hash_string, strlen(ds_file_hash_string));
-	buf_op_idx += strlen(ds_file_hash_string);
-	memcpy(tmp_out_filename + buf_op_idx, MHT_FILE_EXT_NAME, strlen(MHT_FILE_EXT_NAME));
-	buf_op_idx += strlen(MHT_FILE_EXT_NAME);
-	*/
 	memcpy(old_mht_filename, tmp_out_filename, strlen(tmp_out_filename));  // stores the temporary MHT file name
 	printf("old_mht_filename = %s\n", old_mht_filename);
 	
