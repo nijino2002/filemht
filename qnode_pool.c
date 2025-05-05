@@ -2,9 +2,47 @@
 #include <pthread.h>
 
 // 静态池链表头（空闲QNode）
-static PQNode g_qnode_pool_free_list = NULL;
-static size_t g_qnode_pool_alloc_count = 0;
-static pthread_mutex_t g_qnode_pool_lock = PTHREAD_MUTEX_INITIALIZER;
+PQNode g_qnode_pool_free_list = NULL;
+size_t g_qnode_pool_alloc_count = 0;
+pthread_mutex_t g_qnode_pool_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void init_qnode_pool(size_t prealloc_count) {
+    pthread_mutex_lock(&g_qnode_pool_lock);
+
+    g_qnode_pool_free_list = NULL;
+    g_qnode_pool_alloc_count = 0;
+
+    for (size_t i = 0; i < prealloc_count; ++i) {
+        PQNode node = (PQNode)malloc(sizeof(QNode));
+        if (!node) {
+            // 可记录日志或报告警告
+            break;
+        }
+
+        // 初始化字段（可选，但通常在 pool_alloc_qnode 中初始化）
+        node->m_level = 0;
+        node->m_is_written = FALSE;
+        node->m_is_supplementary_node = 0;
+        node->m_is_zero_node = 0;
+        node->m_RMSTL_page_no = 0;
+        node->m_MHTNode_ptr = NULL;
+        node->prev = NULL;
+
+        // 入池链表头
+        node->next = g_qnode_pool_free_list;
+        g_qnode_pool_free_list = node;
+
+        g_qnode_pool_alloc_count++;
+    }
+
+    pthread_mutex_unlock(&g_qnode_pool_lock);
+}
+
+void destroy_qnode_pool(void) {
+    pool_cleanup_qnode();
+    // 额外销毁锁资源（如果库生命周期已结束）
+    pthread_mutex_destroy(&g_qnode_pool_lock);
+}
 
 PQNode pool_alloc_qnode(void) {
     PQNode node = NULL;

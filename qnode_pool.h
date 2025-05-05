@@ -3,10 +3,31 @@
 
 #include "defs.h"
 #include "dbqueue.h"  // 提供 PQNode 的定义
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern PQNode g_qnode_pool_free_list;
+extern size_t g_qnode_pool_alloc_count;
+extern pthread_mutex_t g_qnode_pool_lock;
+
+/**
+ * @brief 初始化 QNode 对象池。
+ * 
+ * @param prealloc_count: pre-allocated node number. 0 is accepted.
+ * 本函数应在程序开始时调用一次，用于初始化对象池的状态。
+ */
+void init_qnode_pool(size_t prealloc_count);
+
+/**
+ * @brief 销毁 QNode 对象池并释放所有资源。
+ * 
+ * 本函数应在程序结束时调用一次，释放对象池中缓存的所有 QNode，
+ * 并销毁相关的互斥锁资源。
+ */
+void destroy_qnode_pool(void);
 
 /**
  * @brief 从对象池中分配一个 QNode 实例（线程安全）。
