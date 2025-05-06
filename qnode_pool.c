@@ -1,7 +1,7 @@
 #include "qnode_pool.h"
 #include <pthread.h>
 
-// 静态池链表头（空闲QNode）
+// QNode池链表头（空闲QNode）
 PQNode g_qnode_pool_free_list = NULL;
 size_t g_qnode_pool_alloc_count = 0;
 pthread_mutex_t g_qnode_pool_lock = PTHREAD_MUTEX_INITIALIZER;

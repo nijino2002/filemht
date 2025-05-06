@@ -526,6 +526,10 @@ void process_all_elem_fv_new_ds_fmt(char* in_data_file,
 	// Header will be updated at the end of building MHT file
 	mht_file_header_ptr = makeMHTFileHeader();
 
+	// pre-allocate free QNode pool
+	if(pool_qnode_allocated_count() <= 0){
+		init_qnode_pool(32);
+	}
 	initQueue(pQHeader, pQ);
 	check_pointer((void*)*pQHeader, "pQHeader");
 	check_pointer((void*)*pQ, "pQ");

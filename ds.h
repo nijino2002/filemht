@@ -30,6 +30,11 @@ typedef struct _ds_header{
 	uint32 m_ds_block_num;
 } DS_HEADER, *PDS_HEADER;
 
+typedef struct {
+	int m_index;
+	char* m_block_data;
+} BLOCK_INFO, *PBLOCK_INFO;
+
 /**
  * @brief      Creates a dataset randomly and save to the file named "filename". Indices are ordered.
  *
@@ -119,6 +124,15 @@ uint32 ds_extend_dataset_by_array(char* filename, void* array_ptr, uint32 array_
 uint32 ds_extend_dataset_by_ds(char* filename, char* input_ds);
 
 /**
+ * @brief 		{Sort data blocks by index}
+ * 
+ * @param input_filename 	Input dataset file name
+ * @param output_filename 	Output dataset file name
+ * @return uint32 			RETCODE_OK is returned if success, otherwise, error code will be returned.
+ */
+uint32 ds_sort_dataset_by_index(const char* input_filename, const char* output_filename);
+
+/**
  * @brief      { Get the total number of blocks in the dataset. }
  *
  * @param      pds_hdr  The pointer to dataset header structure.
@@ -145,5 +159,14 @@ uint32 ds_get_ds_block_size(PDS_HEADER pds_hdr);
  * @return     { TRUE will be returned if success, otherwise, FALSE will be returned.}
  */
 bool ds_verify_ds(char* filename, PDS_HEADER pds_hdr);
+
+/**
+ * @brief compare the indices of the given two data blocks
+ * 
+ * @param a		a data block
+ * @param b 	b data block
+ * @return int 	0: a->m_index == b->m_index; >0: a->m_index > b->m_index; <0: a->m_index < b->m_index.
+ */
+int compare_block_info(const void* a, const void* b);
 
 #endif
